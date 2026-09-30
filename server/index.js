@@ -28,6 +28,26 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
+// Vercel mounts this app at /api and may pass only the path after that prefix.
+app.use((req, _res, next) => {
+  if (!process.env.VERCEL) return next();
+  const raw = req.url || '/';
+  const q = raw.indexOf('?');
+  const pathname = q === -1 ? raw : raw.slice(0, q);
+  const query = q === -1 ? '' : raw.slice(q);
+  if (pathname === '/api/sitemap.xml' || pathname === '/sitemap.xml') {
+    req.url = `/sitemap.xml${query}`;
+    return next();
+  }
+  if (pathname === '/api/robots.txt' || pathname === '/robots.txt') {
+    req.url = `/robots.txt${query}`;
+    return next();
+  }
+  if (pathname.startsWith('/api')) return next();
+  req.url = `/api${pathname === '/' ? '' : pathname}${query}`;
+  next();
+});
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -119,6 +139,10 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ error: err.message || 'Server error' });
 });
 
-app.listen(port, () => {
-  console.log(`[united-scuba] listening on ${port}`);
-});
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`[united-scuba] listening on ${port}`);
+  });
+}
