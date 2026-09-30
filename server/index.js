@@ -28,23 +28,17 @@ const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-// Vercel mounts this app at /api and may pass only the path after that prefix.
+// Vercel may hand this app only part of the path. Put the real request path back.
 app.use((req, _res, next) => {
   if (!process.env.VERCEL) return next();
-  const raw = req.url || '/';
-  const q = raw.indexOf('?');
-  const pathname = q === -1 ? raw : raw.slice(0, q);
-  const query = q === -1 ? '' : raw.slice(q);
-  if (pathname === '/api/sitemap.xml' || pathname === '/sitemap.xml') {
-    req.url = `/sitemap.xml${query}`;
-    return next();
-  }
-  if (pathname === '/api/robots.txt' || pathname === '/robots.txt') {
-    req.url = `/robots.txt${query}`;
-    return next();
-  }
-  if (pathname.startsWith('/api')) return next();
-  req.url = `/api${pathname === '/' ? '' : pathname}${query}`;
+  const header = req.headers['x-forwarded-uri'] || req.headers['x-vercel-original-url'] || req.headers['x-invoke-path'] || '';
+  const candidates = [header, req.originalUrl, req.url].filter(Boolean).map(String);
+  const found = candidates.find((value) => {
+    const pathOnly = value.startsWith('http') ? new URL(value).pathname : value.split('?')[0];
+    return pathOnly.startsWith('/api') || pathOnly === '/sitemap.xml' || pathOnly === '/robots.txt';
+  });
+  if (!found) return next();
+  req.url = found.startsWith('http') ? `${new URL(found).pathname}${new URL(found).search}` : found;
   next();
 });
 
@@ -105,9 +99,13 @@ const loginLimiter = rateLimit({
 
 app.use('/api', apiLimiter);
 app.use('/api/enquiries', formLimiter);
+app.use('/enquiries', formLimiter);
 app.use('/api/admin/login', loginLimiter);
+app.use('/admin/login', loginLimiter);
 app.use('/api/admin', adminRouter);
+app.use('/admin', adminRouter);
 app.use('/api', publicRouter);
+app.use(publicRouter);
 
 app.get('/sitemap.xml', async (_req, res, next) => {
   try {
@@ -125,7 +123,7 @@ app.get('/robots.txt', (_req, res) => {
 app.use(express.static(clientDist, { index: false, maxAge: isProd ? '7d' : 0 }));
 
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
+  if (req.path.startsWith('/api') || req.path === '/google-rating' || req.path === '/content' || req.path === '/health') {
     return res.status(404).json({ error: 'Not found' });
   }
   res.sendFile(path.join(clientDist, 'index.html'), (err) => {
