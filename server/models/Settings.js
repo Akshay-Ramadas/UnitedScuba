@@ -33,6 +33,11 @@ const settingsSchema = new mongoose.Schema(
     googleReviewCount:   { type: Number, default: 349 },
     googleMapsReviewUrl: { type: String, default: '' },
     seoTitle: { type: String, default: 'United Scuba | Scuba Diving in the Andaman Islands' },
+    seoImage: { type: String, default: '' },
+    googleSiteVerification: { type: String, default: '' },
+    geoLat: { type: Number, default: 12.027 },
+    geoLng: { type: Number, default: 92.99 },
+    areaServed: { type: String, default: 'Swaraj Dweep (Havelock Island), Andaman and Nicobar Islands, India' },
     pages: { type: mongoose.Schema.Types.Mixed, default: {} },
     seoDescription: {
       type: String,

@@ -4,7 +4,7 @@ import { Seo } from '../lib/seo.jsx';
 export default function NotFound() {
   return (
     <div className="not-found">
-      <Seo title="Page not found | United Scuba" description="This page does not exist." path="/404" />
+      <Seo title="Page not found | United Scuba" description="This page does not exist." path="/404" noindex />
       <div>
         <p className="kicker">404</p>
         <h1>This page is off the chart</h1>

@@ -4,6 +4,7 @@ import HeroDescent from '../features/hero/HeroDescent.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { businessJsonLd, faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { useContent } from '../hooks/useContent.jsx';
 import { lines, pageFields } from '../content/pageCopy.js';
 import { useScrollReveal, useCounter } from '../hooks/useScrollReveal.jsx';
@@ -135,15 +136,10 @@ export default function Home() {
         title={settings.seoTitle || 'United Scuba | Scuba Diving in the Andaman Islands'}
         description={settings.seoDescription}
         path="/"
-        jsonLd={{
-          '@context': 'https://schema.org',
-          '@type': 'LocalBusiness',
-          name: 'United Scuba',
-          description: settings.seoDescription,
-          telephone: settings.phone,
-          email: settings.email,
-          address: settings.location,
-        }}
+        jsonLd={graphJsonLd(
+          businessJsonLd(settings),
+          faqJsonLd(faqs.filter((item) => item.page === 'home')),
+        )}
       />
 
       {/* ── Hero (300-frame scroll animation — untouched) ── */}

@@ -3,6 +3,7 @@ import PageHero from '../components/PageHero.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { useContent } from '../hooks/useContent.jsx';
 import { pageFields } from '../content/pageCopy.js';
 
@@ -51,7 +52,12 @@ export default function ScubaDiving() {
   const groups = activityGroups(activities);
   return (
     <>
-      <Seo title="Scuba Diving in Andaman | United Scuba" description="Scuba diving and snorkelling with United Scuba in Swaraj Dweep." path="/scuba-diving" />
+      <Seo
+        title="Scuba Diving in Andaman | United Scuba"
+        description="Scuba diving and snorkelling with United Scuba in Swaraj Dweep."
+        path="/scuba-diving"
+        jsonLd={graphJsonLd(faqJsonLd(faqs.filter((item) => item.page === 'scuba')))}
+      />
       <PageHero kicker={copy.kicker} title={copy.title} intro={copy.intro} />
       <section className="section section-dark">
         <div className="container">

@@ -3,6 +3,7 @@ import { useContent } from '../hooks/useContent.jsx';
 import PageHero from '../components/PageHero.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { courseJsonLd, faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { waLink } from '../lib/api.js';
 import '../styles/course.css';
 
@@ -63,7 +64,7 @@ export default function CourseDetail() {
         title={course.seoTitle || `${course.title} | United Scuba`}
         description={course.seoDescription || course.excerpt}
         path={`/courses/${course.slug}`}
-        jsonLd={{ '@context': 'https://schema.org', '@type': 'Course', name: course.title, description: course.excerpt, provider: { '@type': 'Organization', name: 'United Scuba' } }}
+        jsonLd={graphJsonLd(courseJsonLd(course, settings), faqJsonLd(course.faqs))}
       />
       <PageHero
         kicker={course.category === 'professional' ? 'Professional' : 'Recreational'}

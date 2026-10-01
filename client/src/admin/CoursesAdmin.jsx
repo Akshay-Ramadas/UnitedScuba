@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
+import { removeItem, replaceItem } from './listState.js';
 import ImageField from './ImageField.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
@@ -9,6 +10,7 @@ import { Label } from '../components/ui/label.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card.jsx';
 import { ConfirmDialog } from '../components/ui/dialog.jsx';
 import { Plus, Pencil, Trash2, AlertCircle, ChevronRight } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 import SortableGrid, { saveSortOrder } from './SortableGrid.jsx';
 
 /* ── helpers ── */
@@ -113,22 +115,26 @@ function CourseCard({ course, onEdit, onDelete }) {
 export default function CoursesAdmin() {
   const { token } = useAdminAuth();
   const [courses,  setCourses]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
   const [form,     setForm]     = useState(null);  // null = list view
   const [saving,   setSaving]   = useState(false);
   const [error,    setError]    = useState('');
   const [deleteId, setDeleteId] = useState(null);
 
-  async function load() {
-    try { setCourses(await api('/api/admin/courses', { token })); }
-    catch (e) { setError(e.message); }
-  }
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+    let active = true;
+    api('/api/admin/courses', { token })
+      .then((data) => { if (active) setCourses(data); })
+      .catch((e) => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [token]);
 
   const reorder = useCallback(async (ordered) => {
     const next = ordered.map((item, index) => ({ ...item, sortOrder: index + 1 }));
     setCourses(next);
     try { await saveSortOrder('courses', token, next); }
-    catch (err) { setError(err.message); load(); }
+    catch (err) { setError(err.message); }
   }, [token]);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
@@ -138,15 +144,20 @@ export default function CoursesAdmin() {
     setSaving(true); setError('');
     try {
       const body = toBody(form);
-      if (form._id) await api(`/api/admin/courses/${form._id}`, { method: 'PUT',  token, body });
-      else          await api('/api/admin/courses',              { method: 'POST', token, body });
-      setForm(null); load();
+      const saved = form._id
+        ? await api(`/api/admin/courses/${form._id}`, { method: 'PUT',  token, body })
+        : await api('/api/admin/courses',              { method: 'POST', token, body });
+      setCourses((list) => replaceItem(list, saved));
+      setForm(null);
     } catch (e) { setError(e.message); }
     finally { setSaving(false); }
   }
 
   async function doDelete() {
-    try { await api(`/api/admin/courses/${deleteId}`, { method: 'DELETE', token }); load(); }
+    try {
+      await api(`/api/admin/courses/${deleteId}`, { method: 'DELETE', token });
+      setCourses((list) => removeItem(list, deleteId));
+    }
     catch (e) { setError(e.message); }
     finally { setDeleteId(null); }
   }
@@ -314,7 +325,7 @@ export default function CoursesAdmin() {
 
       {error && <div className="sh-alert sh-alert-error" style={{ marginBottom:'1rem' }}><AlertCircle size={16}/><span>{error}</span></div>}
 
-      {courses.length === 0 ? (
+      {loading ? <Spinner label="Loading courses…" /> : courses.length === 0 ? (
         <Card><CardContent>
           <div className="sh-empty">
             <div className="sh-empty-icon">🎓</div>

@@ -3,6 +3,7 @@ import PageHero from '../components/PageHero.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { useContent } from '../hooks/useContent.jsx';
 import { pageFields } from '../content/pageCopy.js';
 import { useScrollReveal } from '../hooks/useScrollReveal.jsx';
@@ -55,6 +56,7 @@ export default function Courses() {
         title="PADI Scuba Diving Courses | United Scuba"
         description="Recreational and professional PADI courses with United Scuba in the Andaman Islands."
         path="/courses"
+        jsonLd={graphJsonLd(faqJsonLd(faqs.filter((item) => item.page === 'courses')))}
       />
       <PageHero
         kicker={copy.kicker}

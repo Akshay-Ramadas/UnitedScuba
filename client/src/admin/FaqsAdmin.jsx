@@ -6,14 +6,20 @@ import { Input, Textarea } from '../components/ui/input.jsx';
 import { Label } from '../components/ui/label.jsx';
 import { ConfirmDialog } from '../components/ui/dialog.jsx';
 import { Plus, Pencil, Trash2, ChevronRight, AlertCircle } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
+import { removeItem, replaceItem } from './listState.js';
 
 const PAGES = [
   { id: 'home', label: 'Home', hint: 'Shown on the home page' },
-  { id: 'scuba', label: 'Scuba diving', hint: 'Shown on the scuba diving page' },
-  { id: 'snorkelling', label: 'Snorkelling', parent: 'scuba', hint: 'Under Scuba diving — shown on the snorkelling page' },
+  { id: 'scuba', label: 'Scuba diving', hint: 'Shown on the scuba diving page. Snorkelling questions belong here too.' },
   { id: 'courses', label: 'Courses', hint: 'Shown on the courses page' },
   { id: 'about', label: 'About us', hint: 'Shown on the about page' },
 ];
+
+function onFaqPage(item, pageId) {
+  if (item.page === pageId) return true;
+  return pageId === 'scuba' && item.page === 'snorkelling';
+}
 
 const EMPTY = { question: '', answer: '' };
 
@@ -63,6 +69,7 @@ function FaqRow({ item, index, onGripDown, onEdit, onDelete, className = '', sty
 export default function FaqsAdmin() {
   const { token } = useAdminAuth();
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [pageId, setPageId] = useState('');
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -79,18 +86,18 @@ export default function FaqsAdmin() {
   itemsRef.current = items;
   pageIdRef.current = pageId;
 
-  async function load() {
-    const data = await api('/api/admin/faqs', { token });
-    setItems(data);
-  }
-
   useEffect(() => {
-    load().catch((e) => setError(e.message));
+    let active = true;
+    api('/api/admin/faqs', { token })
+      .then((data) => { if (active) setItems(data); })
+      .catch((e) => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, [token]);
 
   const page = PAGES.find((p) => p.id === pageId);
   const pageItems = items
-    .filter((item) => item.page === pageId)
+    .filter((item) => onFaqPage(item, pageId))
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   function openNew() {
@@ -117,13 +124,11 @@ export default function FaqsAdmin() {
         page: pageId,
         sortOrder,
       };
-      if (form._id) {
-        await api(`/api/admin/faqs/${form._id}`, { method: 'PUT', token, body });
-      } else {
-        await api('/api/admin/faqs', { method: 'POST', token, body });
-      }
+      const saved = form._id
+        ? await api(`/api/admin/faqs/${form._id}`, { method: 'PUT', token, body })
+        : await api('/api/admin/faqs', { method: 'POST', token, body });
+      setItems((list) => replaceItem(list, saved));
       setForm(null);
-      await load();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -133,7 +138,7 @@ export default function FaqsAdmin() {
 
   function pageList() {
     return itemsRef.current
-      .filter((item) => item.page === pageIdRef.current)
+      .filter((item) => onFaqPage(item, pageIdRef.current))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }
 
@@ -216,7 +221,7 @@ export default function FaqsAdmin() {
         })));
       } catch (err) {
         setError(err.message);
-        load().catch(() => {});
+        api('/api/admin/faqs', { token }).then(setItems).catch(() => {});
       }
     };
     window.addEventListener('pointermove', move);
@@ -253,8 +258,8 @@ export default function FaqsAdmin() {
     if (!pendingDelete) return;
     try {
       await api(`/api/admin/faqs/${pendingDelete._id}`, { method: 'DELETE', token });
+      setItems((list) => removeItem(list, pendingDelete._id));
       setPendingDelete(null);
-      await load();
     } catch (err) {
       setError(err.message);
       setPendingDelete(null);
@@ -281,11 +286,11 @@ export default function FaqsAdmin() {
         </div>
       )}
 
-      {!page && (
+      {loading ? <Spinner label="Loading FAQs…" /> : !page && (
         <div className="sh-card-grid">
           {PAGES.filter((entry) => !entry.parent).map((entry) => {
             const children = PAGES.filter((child) => child.parent === entry.id);
-            const count = items.filter((item) => item.page === entry.id).length;
+            const count = items.filter((item) => onFaqPage(item, entry.id)).length;
             return (
               <div key={entry.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <button

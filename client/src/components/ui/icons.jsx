@@ -28,3 +28,6 @@ export const AlertCircle        = icon(<><circle cx="12" cy="12" r="10"/><line x
 export const CheckCircle2       = icon(<><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></>);
 export const Lock               = icon(<><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>);
 export const ChevronRight       = icon(<path d="m9 18 6-6-6-6"/>);
+export const Inbox              = icon(<><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></>);
+export const Bell               = icon(<><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>);
+export const Clock              = icon(<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>);

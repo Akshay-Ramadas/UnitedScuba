@@ -35,6 +35,11 @@ export const defaultSettings = {
   cancellation:
     'Please contact us as soon as possible if you need to change or cancel. Weather, sea conditions or safety concerns may require us to reschedule. Refund terms will be confirmed in writing when you book. This policy will be updated with the centre’s final commercial terms.',
   seoTitle: 'United Scuba | Scuba Diving in the Andaman Islands',
+  seoImage: '',
+  googleSiteVerification: '',
+  geoLat: 12.027,
+  geoLng: 92.99,
+  areaServed: 'Swaraj Dweep (Havelock Island), Andaman and Nicobar Islands, India',
   seoDescription:
     'United Scuba Dive Centre in Swaraj Dweep (Havelock Island). Safe scuba diving and training for beginners and certified divers since 2018.',
   googleRating: 4.7,

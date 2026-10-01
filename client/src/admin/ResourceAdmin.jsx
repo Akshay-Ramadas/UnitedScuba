@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
+import { removeItem, replaceItem } from './listState.js';
+import { articleToHtml, htmlToArticle, looksLikeHtml } from './articleFormat.js';
 import ImageField from './ImageField.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Input, Textarea } from '../components/ui/input.jsx';
@@ -10,6 +12,7 @@ import { Card, CardContent } from '../components/ui/card.jsx';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableWrapper } from '../components/ui/table.jsx';
 import { ConfirmDialog } from '../components/ui/dialog.jsx';
 import { Plus, Pencil, Trash2, X, AlertCircle } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 import SortableGrid, { saveSortOrder } from './SortableGrid.jsx';
 
 function lines(v)   { return Array.isArray(v) ? v.join('\n') : v || ''; }
@@ -221,20 +224,42 @@ function TableView({ items, imageField, onEdit, onDelete }) {
      imageField   – (optional) field name that holds the primary image URL
      gridView     – (optional) bool; use image grid instead of table for list
    ══════════════════════════════════════════ */
-export default function ResourceAdmin({ title, description = '', path, fields, createTemplate, imageField, gridView = false, cardView = false, crossDelete = false }) {
+export default function ResourceAdmin({ title, description = '', path, fields, createTemplate, imageField, gridView = false, cardView = false, crossDelete = false, bindList }) {
   const { token } = useAdminAuth();
   const [items,     setItems]     = useState([]);
+  const [loading,   setLoading]   = useState(true);
   const [editing,   setEditing]   = useState(null);
   const [error,     setError]     = useState('');
   const [saving,    setSaving]    = useState(false);
   const [deleteId,  setDeleteId]  = useState(null);  // id pending confirmation
   const pendingItem = items.find((i) => i._id === deleteId);
 
-  async function load() {
-    try { setItems(await api(`/api/admin/${path}`, { token })); }
-    catch (e) { setError(e.message); }
-  }
-  useEffect(() => { load(); }, [token, path]);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api(`/api/admin/${path}`, { token })
+      .then((data) => {
+        if (!active) return;
+        setItems((current) => {
+          const ids = new Set(data.map((item) => String(item._id)));
+          const extra = current.filter((item) => !ids.has(String(item._id)));
+          return extra.length ? [...data, ...extra] : data;
+        });
+      })
+      .catch((e) => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [token, path]);
+
+  useEffect(() => {
+    if (!bindList) return undefined;
+    bindList({
+      add(item) {
+        setItems((list) => [...list.filter((entry) => String(entry._id) !== String(item._id)), item]);
+      },
+    });
+    return () => bindList(null);
+  }, [bindList]);
 
   const reorder = useCallback(async (ordered) => {
     const next = ordered.map((item, index) => ({ ...item, sortOrder: index + 1 }));
@@ -243,7 +268,6 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
       await saveSortOrder(path, token, next);
     } catch (err) {
       setError(err.message);
-      try { setItems(await api(`/api/admin/${path}`, { token })); } catch { /* keep the error */ }
     }
   }, [path, token]);
 
@@ -257,6 +281,10 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
     const body = { ...editing };
     for (const f of fields) {
       if (f.type === 'lines') body[f.name] = toLines(body[f.name]);
+      if (f.type === 'article') {
+        const text = looksLikeHtml(body[f.name]) ? htmlToArticle(body[f.name]) : body[f.name];
+        body[f.name] = articleToHtml(text);
+      }
       if (f.type === 'faqs') {
         body.faqs = String(body.faqsText || '').split('\n').map((r) => r.split('|'))
           .filter((p) => p[0]).map(([q, a]) => ({ q: q.trim(), a: (a||'').trim() }));
@@ -265,9 +293,11 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
     }
     delete body._id; delete body.__v; delete body.createdAt; delete body.updatedAt;
     try {
-      if (editing._id) await api(`/api/admin/${path}/${editing._id}`, { method: 'PUT',  token, body });
-      else             await api(`/api/admin/${path}`,                 { method: 'POST', token, body });
-      setEditing(null); load();
+      const saved = editing._id
+        ? await api(`/api/admin/${path}/${editing._id}`, { method: 'PUT',  token, body })
+        : await api(`/api/admin/${path}`,                 { method: 'POST', token, body });
+      setItems((list) => replaceItem(list, saved));
+      setEditing(null);
     } catch (e) { setError(e.message); }
     finally { setSaving(false); }
   }
@@ -277,7 +307,7 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
   async function doDelete() {
     try {
       await api(`/api/admin/${path}/${deleteId}`, { method: 'DELETE', token });
-      load();
+      setItems((list) => removeItem(list, deleteId));
       if (editing?._id === deleteId) setEditing(null);
     } catch (e) { setError(e.message); }
     finally { setDeleteId(null); }
@@ -368,14 +398,45 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
               );
 
               /* Select */
-              if (field.type === 'select') return (
-                <div key={field.name} className="sh-field">
-                  <Label htmlFor={field.name}>{field.label}</Label>
-                  <select id={field.name} className="sh-select" value={raw} onChange={(e) => update(field.name, e.target.value)}>
-                    {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              );
+              if (field.type === 'select') {
+                const other = field.allowOther && !field.options.includes(String(raw || ''));
+                return (
+                  <div key={field.name} className="sh-field">
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <select
+                      id={field.name}
+                      className="sh-select"
+                      value={other ? '__other__' : raw}
+                      onChange={(e) => update(field.name, e.target.value === '__other__' ? '' : e.target.value)}
+                    >
+                      {field.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                      {field.allowOther && <option value="__other__">Other</option>}
+                    </select>
+                    {field.allowOther && other && (
+                      <Input
+                        value={raw}
+                        onChange={(e) => update(field.name, e.target.value)}
+                        placeholder="Type a category"
+                        style={{ marginTop: '0.5rem' }}
+                        required
+                      />
+                    )}
+                  </div>
+                );
+              }
+
+              if (field.type === 'article') {
+                const shown = looksLikeHtml(raw) ? htmlToArticle(raw) : raw;
+                return (
+                  <div key={field.name} className="sh-field">
+                    <Label htmlFor={field.name}>
+                      {field.label}
+                      {field.hint && <span className="sh-label-hint"> — {field.hint}</span>}
+                    </Label>
+                    <Textarea id={field.name} rows={12} value={shown} onChange={(e) => update(field.name, e.target.value)} />
+                  </div>
+                );
+              }
 
               /* Textarea / lines / faqs */
               if (field.type === 'textarea' || field.type === 'lines' || field.type === 'faqs') return (
@@ -414,7 +475,7 @@ export default function ResourceAdmin({ title, description = '', path, fields, c
       {/* ── Items list ── */}
       <Card>
         <CardContent style={{ padding: (gridView || cardView) && items.length > 0 ? '1rem' : 0 }}>
-          {items.length === 0 ? (
+          {loading ? <Spinner label={`Loading ${title.toLowerCase()}…`} /> : items.length === 0 ? (
             <div className="sh-empty">
               <div className="sh-empty-icon">📄</div>
               <p className="sh-empty-title">No {title.toLowerCase()} yet</p>

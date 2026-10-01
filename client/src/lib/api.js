@@ -9,6 +9,9 @@ export async function api(path, { method = 'GET', body, token } = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 401 && token && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('us-admin-unauthorized'));
+    }
     const error = new Error(data.error || 'Request failed');
     error.status = res.status;
     error.issues = data.issues;

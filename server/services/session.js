@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-const TOKEN_DAYS = 7;
+const TOKEN_TTL_SEC = 24 * 60 * 60;
 
 function adminEmail() {
   return String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
@@ -37,25 +37,38 @@ export function adminConfigured() {
 }
 
 export function signAdminToken(email) {
-  const payload = Buffer.from(
-    JSON.stringify({
-      email,
-      exp: Date.now() + TOKEN_DAYS * 24 * 60 * 60 * 1000,
-    })
-  ).toString('base64url');
-  return `${payload}.${hmac(payload)}`;
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({
+    sub: 'admin',
+    email,
+    iat: now,
+    exp: now + TOKEN_TTL_SEC,
+  })).toString('base64url');
+  return `${header}.${payload}.${hmac(`${header}.${payload}`)}`;
 }
 
 export function verifyAdminToken(token) {
-  if (!token || !token.includes('.')) {
+  const parts = String(token || '').split('.');
+  if (parts.length !== 3) {
     throw new Error('Invalid session');
   }
-  const [payload, signature] = token.split('.');
-  if (!safeEqual(signature, hmac(payload))) {
+  const [header, payload, signature] = parts;
+  if (!safeEqual(signature, hmac(`${header}.${payload}`))) {
     throw new Error('Invalid session');
   }
-  const data = JSON.parse(Buffer.from(payload, 'base64url').toString());
-  if (!data.exp || data.exp < Date.now()) {
+  let headerData;
+  let data;
+  try {
+    headerData = JSON.parse(Buffer.from(header, 'base64url').toString());
+    data = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  } catch {
+    throw new Error('Invalid session');
+  }
+  if (headerData.alg !== 'HS256' || headerData.typ !== 'JWT') {
+    throw new Error('Invalid session');
+  }
+  if (!data.exp || data.exp < Math.floor(Date.now() / 1000)) {
     throw new Error('Session expired');
   }
   if (!safeEqual(String(data.email || '').toLowerCase(), adminEmail())) {

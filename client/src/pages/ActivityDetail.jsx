@@ -4,6 +4,7 @@ import PageHero from '../components/PageHero.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 
 export default function ActivityDetail() {
   const { slug } = useParams();
@@ -20,7 +21,13 @@ export default function ActivityDetail() {
 
   return (
     <>
-      <Seo title={item.seoTitle || `${item.title} | United Scuba`} description={item.seoDescription || item.excerpt} path={`${base}/${item.slug}`} />
+      <Seo
+        title={item.seoTitle || `${item.title} | United Scuba`}
+        description={item.seoDescription || item.excerpt}
+        path={`${base}/${item.slug}`}
+        image={item.heroImage}
+        jsonLd={graphJsonLd(faqJsonLd(item.faqs))}
+      />
       <PageHero kicker={kicker} title={item.title} intro={item.overview || item.excerpt} />
       <section className="section">
         <div className="container prose">

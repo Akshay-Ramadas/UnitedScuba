@@ -4,6 +4,7 @@ import { useAdminAuth } from './auth.jsx';
 import { Input } from '../components/ui/input.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { AlertCircle } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 
 const UpIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
@@ -95,7 +96,7 @@ export default function ImageField({ value, onChange, label }) {
         >
           <UpIcon />
           <p style={{ fontSize: '0.825rem', color: 'hsl(215.4 16.3% 46.9%)', margin: 0 }}>
-            {uploading ? 'Uploading…' : 'Drag & drop or click to upload'}
+            {uploading ? <Spinner size="sm" label="Uploading…" /> : 'Drag & drop or click to upload'}
           </p>
           <p style={{ fontSize: '0.75rem', color: 'hsl(215.4 16.3% 65%)', margin: 0 }}>PNG, JPG, WEBP, GIF</p>
         </div>
@@ -115,7 +116,7 @@ export default function ImageField({ value, onChange, label }) {
           disabled={uploading}
           style={{ flexShrink: 0, gap: 6 }}
         >
-          <UpIcon /> {uploading ? 'Uploading…' : 'Upload'}
+          {uploading ? <Spinner size="sm" label="Uploading…" /> : <><UpIcon /> Upload</>}
         </Button>
         <input ref={fileRef} type="file" accept="image/*" onChange={onFileInput} style={{ display: 'none' }} />
       </div>

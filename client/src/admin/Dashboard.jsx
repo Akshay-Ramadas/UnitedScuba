@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card.jsx';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableWrapper } from '../components/ui/table.jsx';
-import { Mail, GraduationCap, ImageIcon, Settings, AlertCircle } from '../components/ui/icons.jsx';
+import { Mail, GraduationCap, ImageIcon, Settings, AlertCircle, Inbox, Bell, Clock, CheckCircle2, ChevronRight } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 
 function latestFirst(list) {
   return [...(list || [])].sort((a, b) => {
@@ -18,13 +19,16 @@ function latestFirst(list) {
 
 export default function Dashboard() {
   const { token } = useAdminAuth();
+  const navigate = useNavigate();
   const [enquiries, setEnquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api('/api/admin/enquiries', { token })
       .then((data) => setEnquiries(latestFirst(data)))
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
   }, [token]);
 
   const total  = enquiries.length;
@@ -58,17 +62,20 @@ export default function Dashboard() {
         </div>
       )}
 
+      {loading ? <Spinner label="Loading overview…" /> : (
+      <>
       {/* Stat cards */}
       <div className="sh-stats">
         {[
-          { label: 'Total Enquiries', value: total,  sub: 'all time',        icon: '✉', color: '' },
-          { label: 'New',             value: fresh,  sub: 'awaiting reply',  icon: '🔔', color: 'color:hsl(221 83% 53%)' },
-          { label: 'In Progress',     value: active, sub: 'being handled',   icon: '⏳', color: 'color:hsl(24 95% 45%)' },
-          { label: 'Completed',       value: done,   sub: 'bookings closed', icon: '✅', color: 'color:hsl(142 71% 35%)' },
-        ].map(({ label, value, sub, icon, color }) => (
+          { label: 'Total Enquiries', value: total,  sub: 'all time',       Icon: Inbox, tone: 'slate' },
+          { label: 'New',             value: fresh,  sub: 'awaiting reply', Icon: Bell, tone: 'blue' },
+          { label: 'In Progress',     value: active, sub: 'being handled',  Icon: Clock, tone: 'amber' },
+          { label: 'Completed',       value: done,   sub: 'bookings closed', Icon: CheckCircle2, tone: 'green' },
+        ].map(({ label, value, sub, Icon, tone }) => (
           <div className="sh-stat" key={label}>
-            <div className="sh-stat-label">{label} <span style={{ fontSize: '1.1rem' }}>{icon}</span></div>
-            <div className="sh-stat-value" style={{ [color.split(':')[0]]: color.split(':')[1] }}>{value}</div>
+            <div className={`sh-stat-icon sh-stat-icon-${tone}`}><Icon size={16} /></div>
+            <div className="sh-stat-value">{value}</div>
+            <div className="sh-stat-label">{label}</div>
             <div className="sh-stat-sub">{sub}</div>
           </div>
         ))}
@@ -88,7 +95,7 @@ export default function Dashboard() {
         <CardContent style={{ padding: 0 }}>
           {recent.length === 0 ? (
             <div className="sh-empty">
-              <div className="sh-empty-icon">✉</div>
+              <div className="sh-empty-icon"><Mail size={22} /></div>
               <p className="sh-empty-title">No enquiries yet</p>
               <p className="sh-empty-desc">They'll appear here once guests submit the booking form.</p>
             </div>
@@ -106,7 +113,18 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {recent.map((item) => (
-                    <TableRow key={item._id}>
+                    <TableRow
+                      key={item._id}
+                      className="sh-row-click"
+                      tabIndex={0}
+                      onClick={() => navigate(`/admin/enquiries?id=${item._id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/admin/enquiries?id=${item._id}`);
+                        }
+                      }}
+                    >
                       <TableCell>
                         <span style={{ fontWeight: 600 }}>{item.name}</span>
                         {item.message && <p className="sh-td-muted">{item.message.slice(0, 55)}{item.message.length > 55 ? '…' : ''}</p>}
@@ -130,15 +148,18 @@ export default function Dashboard() {
       {/* Quick links */}
       <div className="sh-quick-grid">
         {QUICK.map(({ to, Icon, label, desc }) => (
-          <Link key={to} to={to} className={`sh-card sh-quick-card`}>
-            <span className="sh-quick-icon"><Icon size={22} /></span>
+          <Link key={to} to={to} className="sh-card sh-quick-card">
+            <span className="sh-quick-icon"><Icon size={16} /></span>
             <div>
               <div className="sh-quick-title">{label}</div>
               <div className="sh-quick-desc">{desc}</div>
             </div>
+            <ChevronRight size={16} className="sh-quick-go" />
           </Link>
         ))}
       </div>
+      </>
+      )}
     </>
   );
 }

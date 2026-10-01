@@ -3,6 +3,7 @@ import PageHero from '../components/PageHero.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import FaqList from '../components/FaqList.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { useContent } from '../hooks/useContent.jsx';
 import { pageFields } from '../content/pageCopy.js';
 
@@ -12,7 +13,12 @@ export default function Snorkelling() {
   const items = activities.filter((a) => a.type === 'snorkelling');
   return (
     <>
-      <Seo title="Snorkelling in Andaman | United Scuba" description="Shore, boat and deep-sea snorkelling with United Scuba." path="/snorkelling" />
+      <Seo
+        title="Snorkelling in Andaman | United Scuba"
+        description="Shore, boat and deep-sea snorkelling with United Scuba."
+        path="/snorkelling"
+        jsonLd={graphJsonLd(faqJsonLd(faqs.filter((item) => item.page === 'snorkelling')))}
+      />
       <PageHero kicker={copy.kicker} title={copy.title} intro={copy.intro} />
       <section className="section section-dark">
         <div className="container">

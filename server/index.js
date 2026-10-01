@@ -9,7 +9,7 @@ import { connectDb } from './db.js';
 import { initCloudinary } from './services/cloudinary.js';
 import { publicRouter } from './routes/public.js';
 import { adminRouter } from './routes/admin.js';
-import { buildSitemapUrls, robotsTxt, sitemapXml } from './seo.js';
+import { buildSitemapUrls, llmsTxt, robotsTxt, sitemapXml } from './seo.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
@@ -35,7 +35,7 @@ app.use((req, _res, next) => {
   const candidates = [header, req.originalUrl, req.url].filter(Boolean).map(String);
   const found = candidates.find((value) => {
     const pathOnly = value.startsWith('http') ? new URL(value).pathname : value.split('?')[0];
-    return pathOnly.startsWith('/api') || pathOnly === '/sitemap.xml' || pathOnly === '/robots.txt';
+    return pathOnly.startsWith('/api') || pathOnly === '/sitemap.xml' || pathOnly === '/robots.txt' || pathOnly === '/llms.txt';
   });
   if (!found) return next();
   req.url = found.startsWith('http') ? `${new URL(found).pathname}${new URL(found).search}` : found;
@@ -118,6 +118,14 @@ app.get('/sitemap.xml', async (_req, res, next) => {
 
 app.get('/robots.txt', (_req, res) => {
   res.type('text/plain').send(robotsTxt());
+});
+
+app.get('/llms.txt', async (_req, res, next) => {
+  try {
+    res.type('text/plain; charset=utf-8').send(await llmsTxt());
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.use(express.static(clientDist, { index: false, maxAge: isProd ? '7d' : 0 }));

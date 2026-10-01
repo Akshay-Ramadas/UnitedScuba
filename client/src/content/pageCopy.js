@@ -36,7 +36,7 @@ export const PAGE_CONTENT = [
   {
     id: 'scuba',
     title: 'Scuba diving',
-    hint: 'Scuba diving page. Diving and snorkelling activities sit under this in the menu and footer.',
+    hint: 'Scuba diving page. Snorkelling copy is edited on this same page.',
     fields: [
       { name: 'kicker', label: 'Label', default: 'Scuba diving' },
       { name: 'title', label: 'Heading', default: 'Dive the Andaman Islands' },
@@ -56,8 +56,8 @@ export const PAGE_CONTENT = [
   {
     id: 'snorkelling',
     title: 'Snorkelling',
-    parent: 'scuba',
-    hint: 'Under Scuba diving in the menu and footer',
+    hidden: true,
+    hint: 'Edited inside Scuba diving',
     fields: [
       { name: 'kicker', label: 'Label', default: 'Snorkelling' },
       { name: 'title', label: 'Heading', default: 'See the reef from the surface' },

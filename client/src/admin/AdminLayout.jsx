@@ -40,8 +40,7 @@ export default function AdminLayout() {
     <>
       <div className="sh-sidebar-header">
         <div className="sh-sidebar-brand">
-          <img src={LOGO} alt="United Scuba" />
-          <span className="sh-sidebar-brand-name">United Scuba</span>
+          <img src={LOGO} alt="" />
           <span className="sh-sidebar-brand-badge">Admin</span>
         </div>
       </div>

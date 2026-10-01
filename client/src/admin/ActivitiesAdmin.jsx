@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
+import { removeItem, replaceItem } from './listState.js';
 import ImageField from './ImageField.jsx';
 import { Button } from '../components/ui/button.jsx';
 import { Badge } from '../components/ui/badge.jsx';
@@ -9,6 +10,7 @@ import { Label } from '../components/ui/label.jsx';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card.jsx';
 import { ConfirmDialog } from '../components/ui/dialog.jsx';
 import { Plus, Pencil, Trash2, AlertCircle } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 import SortableGrid, { saveSortOrder } from './SortableGrid.jsx';
 
 /* ── helpers ── */
@@ -117,6 +119,7 @@ function ActivityCard({ activity, onEdit, onDelete }) {
 export default function ActivitiesAdmin() {
   const { token } = useAdminAuth();
   const [activities, setActivities] = useState([]);
+  const [loading,    setLoading]    = useState(true);
   const [form,       setForm]       = useState(null);
   const [saving,     setSaving]     = useState(false);
   const [error,      setError]      = useState('');
@@ -124,17 +127,20 @@ export default function ActivitiesAdmin() {
   const [useCustom,  setUseCustom]  = useState(false);
   const [customName, setCustomName] = useState('');
 
-  async function load() {
-    try { setActivities(await api('/api/admin/activities', { token })); }
-    catch (e) { setError(e.message); }
-  }
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+    let active = true;
+    api('/api/admin/activities', { token })
+      .then((data) => { if (active) setActivities(data); })
+      .catch((e) => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [token]);
 
   const reorder = useCallback(async (ordered) => {
     const next = ordered.map((item, index) => ({ ...item, sortOrder: index + 1 }));
     setActivities(next);
     try { await saveSortOrder('activities', token, next); }
-    catch (err) { setError(err.message); load(); }
+    catch (err) { setError(err.message); }
   }, [token]);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
@@ -158,18 +164,22 @@ export default function ActivitiesAdmin() {
     setSaving(true); setError('');
     try {
       const body = toBody({ ...form, type });
-      if (form._id) await api(`/api/admin/activities/${form._id}`, { method: 'PUT',  token, body });
-      else          await api('/api/admin/activities',              { method: 'POST', token, body });
+      const saved = form._id
+        ? await api(`/api/admin/activities/${form._id}`, { method: 'PUT',  token, body })
+        : await api('/api/admin/activities',              { method: 'POST', token, body });
+      setActivities((list) => replaceItem(list, saved));
       setForm(null);
       setUseCustom(false);
       setCustomName('');
-      load();
     } catch (e) { setError(e.message); }
     finally { setSaving(false); }
   }
 
   async function doDelete() {
-    try { await api(`/api/admin/activities/${deleteId}`, { method: 'DELETE', token }); load(); }
+    try {
+      await api(`/api/admin/activities/${deleteId}`, { method: 'DELETE', token });
+      setActivities((list) => removeItem(list, deleteId));
+    }
     catch (e) { setError(e.message); }
     finally { setDeleteId(null); }
   }
@@ -345,7 +355,7 @@ export default function ActivitiesAdmin() {
 
       {error && <div className="sh-alert sh-alert-error" style={{ marginBottom: '1rem' }}><AlertCircle size={16} /><span>{error}</span></div>}
 
-      {activities.length === 0 ? (
+      {loading ? <Spinner label="Loading activities…" /> : activities.length === 0 ? (
         <Card><CardContent>
           <div className="sh-empty">
             <div className="sh-empty-icon">🌊</div>

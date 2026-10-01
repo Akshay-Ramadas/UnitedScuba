@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
+import { replaceItem } from './listState.js';
 import { Badge } from '../components/ui/badge.jsx';
 import { Button } from '../components/ui/button.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 import { AlertCircle } from '../components/ui/icons.jsx';
 
 /* ─── Icons ─── */
@@ -169,23 +172,31 @@ function DetailPanel({ item, onStatusChange }) {
 /* ─── Main page ─── */
 export default function Enquiries() {
   const { token } = useAdminAuth();
+  const [params, setParams] = useSearchParams();
   const [items,    setItems]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
   const [filter,   setFilter]   = useState('all');
   const [selected, setSelected] = useState(null);
   const [error,    setError]    = useState('');
 
-  async function load() {
-    try {
-      const data = latestFirst(await api('/api/admin/enquiries', { token }));
-      setItems(data);
-      // keep selected in sync after reload
-      if (selected) {
-        const refreshed = data.find((d) => d._id === selected._id);
-        if (refreshed) setSelected(refreshed);
-      }
-    } catch (e) { setError(e.message); }
-  }
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+    let active = true;
+    api('/api/admin/enquiries', { token })
+      .then((data) => {
+        if (!active) return;
+        const list = latestFirst(data);
+        setItems(list);
+        const openId = params.get('id');
+        if (openId) {
+          const match = list.find((item) => String(item._id) === openId);
+          if (match) setSelected(match);
+          setParams({}, { replace: true });
+        }
+      })
+      .catch((e) => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [token]);
 
   async function updateStatus(id, status) {
     const current = items.find((item) => item._id === id);
@@ -196,9 +207,10 @@ export default function Enquiries() {
       return;
     }
     try {
-      await api(`/api/admin/enquiries/${id}`, { method: 'PATCH', token, body: { status } });
+      const updated = await api(`/api/admin/enquiries/${id}`, { method: 'PATCH', token, body: { status } });
       setError('');
-      load();
+      setItems((list) => replaceItem(list, updated));
+      setSelected(updated);
     } catch (e) { setError(e.message); }
   }
 
@@ -236,8 +248,7 @@ export default function Enquiries() {
         ))}
       </div>
 
-      {/* Split panel */}
-      {displayed.length === 0 ? (
+      {loading ? <Spinner label="Loading enquiries…" /> : displayed.length === 0 ? (
         <div className="sh-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', color: 'hsl(215.4 16.3% 46.9%)' }}>
           <div style={{ fontSize: '2rem', marginBottom: '0.75rem', opacity: 0.35 }}>✉</div>
           <p style={{ fontWeight: 600, color: 'hsl(222.2 84% 4.9%)' }}>

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ResourceAdmin from './ResourceAdmin.jsx';
 import { api } from '../lib/api.js';
 import { useAdminAuth } from './auth.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { AlertCircle, ImageIcon } from '../components/ui/icons.jsx';
+import { Spinner } from '../components/ui/spinner.jsx';
 
 export default function GalleryAdmin() {
   const { token } = useAdminAuth();
@@ -11,6 +12,8 @@ export default function GalleryAdmin() {
   const [note, setNote]       = useState('');
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
+  const listRef = useRef(null);
+  const bindList = useCallback((api) => { listRef.current = api; }, []);
 
   useEffect(() => {
     api('/api/admin/uploads/sign', { method: 'POST', token, body: {} })
@@ -33,13 +36,13 @@ export default function GalleryAdmin() {
       const res  = await fetch(`https://api.cloudinary.com/v1_1/${sign.cloudName}/image/upload`, { method: 'POST', body: data });
       const json = await res.json();
       if (!res.ok) { setNote(json.error?.message || 'Upload failed'); return; }
-      await api('/api/admin/gallery', {
+      const created = await api('/api/admin/gallery', {
         method: 'POST', token,
         body: { url: json.secure_url, publicId: json.public_id, alt: file.name, category: 'scuba' },
       });
-      setNote('✅ Uploaded successfully — the item now appears in the list below.');
+      listRef.current?.add(created);
+      setNote('Uploaded. The new photo is at the end of the list.');
       if (fileRef.current) fileRef.current.value = '';
-      window.location.reload();
     } catch (err) {
       setNote(err.message || 'Upload error');
     } finally {
@@ -58,7 +61,7 @@ export default function GalleryAdmin() {
           </p>
 
           {note && (
-            <div className={`sh-alert ${note.startsWith('✅') ? 'sh-alert-ok' : 'sh-alert-error'}`} style={{ marginBottom: '0.75rem' }}>
+            <div className={`sh-alert ${note.startsWith('Uploaded') ? 'sh-alert-ok' : 'sh-alert-error'}`} style={{ marginBottom: '0.75rem' }}>
               <AlertCircle size={15} />
               <span>{note}</span>
             </div>
@@ -71,8 +74,7 @@ export default function GalleryAdmin() {
               cursor: 'pointer', background: 'hsl(210 40% 98%)', fontSize: '0.875rem',
               color: 'hsl(215.4 16.3% 46.9%)', transition: 'border-color 0.15s',
             }}>
-              <ImageIcon size={20} />
-              {uploading ? 'Uploading…' : 'Click or drag an image to upload'}
+              {uploading ? <Spinner size="sm" label="Uploading…" /> : <><ImageIcon size={20} /> Click or drag an image to upload</>}
               <input ref={fileRef} type="file" accept="image/*" onChange={onFile} style={{ display: 'none' }} disabled={uploading} />
             </label>
           ) : (
@@ -85,6 +87,7 @@ export default function GalleryAdmin() {
       </Card>
 
       <ResourceAdmin
+        bindList={bindList}
         title="Gallery"
         description="Drag a photo to change the order. The home page shows only the first six in this list. Every other photo stays on the Gallery page."
         crossDelete
