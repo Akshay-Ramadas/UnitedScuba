@@ -1,5 +1,74 @@
 const TOTAL_FRAMES = 300;
 const TOTAL_SCENES = 5;
+const FRAME_LOADS = 4;
+
+function frameSrc(index) {
+  return `/frames/frame_${String(index).padStart(4, '0')}.jpg`;
+}
+
+function heroPixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, 1.5);
+}
+
+function createFrameLoader() {
+  const images = new Array(TOTAL_FRAMES);
+  const state = new Uint8Array(TOTAL_FRAMES);
+  let active = 0;
+  let focus = 0;
+  let onReady = () => {};
+
+  function start(index) {
+    if (state[index] !== 0) return;
+    state[index] = 1;
+    active += 1;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = frameSrc(index);
+    const done = () => {
+      state[index] = 2;
+      active -= 1;
+      onReady(index);
+      pump();
+    };
+    img.onload = () => {
+      if (img.decode) img.decode().then(done).catch(done);
+      else done();
+    };
+    img.onerror = done;
+    images[index] = img;
+  }
+
+  function pump() {
+    if (state[focus] === 0) start(focus);
+    for (let step = 1; step < TOTAL_FRAMES && active < FRAME_LOADS; step += 1) {
+      const ahead = focus + step;
+      const behind = focus - step;
+      if (ahead < TOTAL_FRAMES && state[ahead] === 0 && active < FRAME_LOADS) start(ahead);
+      if (behind >= 0 && state[behind] === 0 && active < FRAME_LOADS) start(behind);
+    }
+  }
+
+  return {
+    images,
+    setFocus(index) {
+      focus = Math.max(0, Math.min(TOTAL_FRAMES - 1, index));
+      pump();
+    },
+    setOnReady(fn) { onReady = fn; },
+    ready(index) {
+      const img = images[index];
+      return state[index] === 2 && img && img.naturalWidth > 0;
+    },
+  };
+}
+
+function nearestReady(loader, index) {
+  if (loader.ready(index)) return index;
+  for (let step = 1; step < 24; step += 1) {
+    if (loader.ready(index - step)) return index - step;
+  }
+  return loader.ready(0) ? 0 : -1;
+}
 
 export function isMobileHero() {
   if (typeof window === 'undefined') return true;
@@ -13,27 +82,23 @@ export function isMobileHero() {
 /** Plays the dive frames on their own. Used on phones, where scroll-scrub is off. */
 export function playFrameVideo(canvas) {
   if (!canvas) return () => {};
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const frameMs = 50;
-  const images = [];
+  const loader = createFrameLoader();
   let destroyed = false;
   let rafId = 0;
   let index = 0;
+  let drawn = -1;
   let last = 0;
-
-  for (let i = 0; i < TOTAL_FRAMES; i += 1) {
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = `/frames/frame_${String(i).padStart(4, '0')}.jpg`;
-    images.push(img);
-  }
+  loader.setFocus(0);
 
   function resize() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = heroPixelRatio();
     const { width, height } = canvas.getBoundingClientRect();
     canvas.width = Math.max(1, Math.round(width * dpr));
     canvas.height = Math.max(1, Math.round(height * dpr));
+    drawn = -1;
   }
 
   function draw(img) {
@@ -65,13 +130,18 @@ export function playFrameVideo(canvas) {
     if (!reduced) {
       if (!last) last = now;
       if (now - last >= frameMs) {
-        last = now;
-        const next = (index + 1) % images.length;
-        const img = images[next];
-        if (img.complete && img.naturalWidth) index = next;
+        const next = (index + 1) % TOTAL_FRAMES;
+        if (loader.ready(next)) {
+          last = now;
+          index = next;
+          loader.setFocus(index);
+        }
       }
     }
-    draw(images[index]);
+    if (index !== drawn && loader.ready(index)) {
+      draw(loader.images[index]);
+      drawn = index;
+    }
     rafId = requestAnimationFrame(loop);
   }
 
@@ -88,7 +158,7 @@ export function playFrameVideo(canvas) {
 
 export function initHero(root) {
   const canvas = root.querySelector('#video-canvas');
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   const heroSection = root.querySelector('#hero');
   const depthTint = root.querySelector('#depth-tint');
   const depthVal = root.querySelector('#depth-value');
@@ -104,14 +174,14 @@ export function initHero(root) {
   const modeBtn = root.querySelector('#mode-btn');
   const modeLabel = root.querySelector('#mode-label');
 
-  const frameImages = [];
-  let loadedFramesCount = 0;
+  const frames = createFrameLoader();
   let isAppStarted = false;
   let destroyed = false;
   let rafId = 0;
   let targetProgress = 0;
   let currentProgress = 0;
   let isAutoPlay = false;
+  let drawnFrame = -1;
   const autoPlaySpeed = 0.0008;
   let lastScrollProgress = 0;
   let lastBubbleTime = 0;
@@ -122,25 +192,10 @@ export function initHero(root) {
   let subGain = null;
   let isAudioPlaying = false;
 
-  for (let i = 0; i < TOTAL_FRAMES; i += 1) {
-    const img = new Image();
-    img.src = `/frames/frame_${String(i).padStart(4, '0')}.jpg`;
-    img.onload = () => {
-      if (img.decode) {
-        img.decode().then(onFrameLoaded).catch(onFrameLoaded);
-      } else {
-        onFrameLoaded();
-      }
-    };
-    img.onerror = onFrameLoaded;
-    frameImages.push(img);
-  }
-
-  function onFrameLoaded() {
-    if (destroyed) return;
-    loadedFramesCount += 1;
-    if (!isAppStarted && frameImages[0]?.complete) startApp();
-  }
+  frames.setOnReady(() => {
+    if (!destroyed && !isAppStarted && frames.ready(0)) startApp();
+  });
+  frames.setFocus(0);
 
   function startApp() {
     if (isAppStarted || destroyed) return;
@@ -155,9 +210,10 @@ export function initHero(root) {
   startApp();
 
   function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = heroPixelRatio();
     canvas.width = window.innerWidth * dpr;
     canvas.height = window.innerHeight * dpr;
+    drawnFrame = -1;
   }
 
   function onScroll() {
@@ -189,7 +245,12 @@ export function initHero(root) {
       TOTAL_FRAMES - 1,
       Math.max(0, Math.floor(currentProgress * (TOTAL_FRAMES - 1)))
     );
-    drawFrameToCanvas(frameImages[frameIndex]);
+    frames.setFocus(frameIndex);
+    const show = nearestReady(frames, frameIndex);
+    if (show !== -1 && show !== drawnFrame) {
+      drawFrameToCanvas(frames.images[show]);
+      drawnFrame = show;
+    }
     let activeSceneIndex = Math.min(TOTAL_SCENES - 1, Math.floor(currentProgress * TOTAL_SCENES));
     if (currentProgress >= 1) activeSceneIndex = TOTAL_SCENES - 1;
     updateHUD(currentProgress, activeSceneIndex);
