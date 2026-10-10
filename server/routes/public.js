@@ -7,6 +7,7 @@ import { GalleryItem } from '../models/GalleryItem.js';
 import { Faq } from '../models/Faq.js';
 import { Review } from '../models/Review.js';
 import { Post } from '../models/Post.js';
+import { DiveSite } from '../models/DiveSite.js';
 import { fallbackContent, mongoReady } from '../db.js';
 import { validate } from '../middleware/validate.js';
 import { sendBusinessNotification, sendCustomerAcknowledgement } from '../services/mail.js';
@@ -52,10 +53,11 @@ publicRouter.get('/content', async (_req, res, next) => {
         reviews: fb.reviews,
         posts: fb.posts.filter((p) => p.published),
         gallery: fb.gallery,
+        diveSites: (fb.diveSites || []).filter((site) => site.published !== false),
       });
     }
 
-    const [settings, courses, activities, faqs, reviews, posts, gallery] = await Promise.all([
+    const [settings, courses, activities, faqs, reviews, posts, gallery, diveSites] = await Promise.all([
       Settings.findOne({ key: 'site' }).lean(),
       Course.find({ published: true }).sort({ sortOrder: 1, title: 1 }).lean(),
       Activity.find({ published: true }).sort({ sortOrder: 1, title: 1 }).lean(),
@@ -63,6 +65,7 @@ publicRouter.get('/content', async (_req, res, next) => {
       Review.find({ featured: true }).sort({ sortOrder: 1, createdAt: -1 }).lean(),
       Post.find({ published: true }).sort({ sortOrder: 1, publishedAt: -1 }).lean(),
       GalleryItem.find().sort({ sortOrder: 1, createdAt: -1 }).lean(),
+      DiveSite.find({ published: true }).sort({ sortOrder: 1, title: 1 }).lean(),
     ]);
 
     res.json({
@@ -73,6 +76,7 @@ publicRouter.get('/content', async (_req, res, next) => {
       reviews,
       posts,
       gallery,
+      diveSites,
     });
   } catch (err) {
     next(err);
@@ -130,14 +134,17 @@ publicRouter.get('/posts/:slug', async (req, res, next) => {
 const enquirySchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(6).max(30),
-  email: z.string().trim().email().max(160),
+  email: z.string().trim().max(160).optional().default('')
+    .refine((value) => value === '' || z.string().email().safeParse(value).success, 'Enter a valid email'),
   preferredDate: z.string().trim().max(40).optional().default(''),
   numberOfPeople: z.coerce.number().int().min(1).max(40).optional().default(1),
   activityType: z.enum(['scuba', 'snorkelling', 'course', 'general']).optional().default('general'),
-  diverLevel: z.enum(['beginner', 'certified', 'not-sure', '']).optional().default(''),
+  diverLevel: z.enum(['beginner', 'certified', 'not-sure', 'snorkelling', '']).optional().default(''),
   preferredItem: z.string().trim().max(200).optional().default(''),
+  diveSites: z.string().trim().max(500).optional().default(''),
+  plan: z.string().trim().max(120).optional().default(''),
   message: z.string().trim().max(4000).optional().default(''),
-  source: z.enum(['book-now', 'contact']).optional().default('book-now'),
+  source: z.enum(['book-now', 'contact', 'plan-dive']).optional().default('book-now'),
   whatsappOptIn: z.boolean().optional().default(true),
   website: z.string().optional().default(''),
 });
@@ -145,8 +152,8 @@ const enquirySchema = z.object({
 async function deliverEnquiryMail(enquiry) {
   const jobs = [
     ['admin', () => sendBusinessNotification(enquiry)],
-    ['customer', () => sendCustomerAcknowledgement(enquiry)],
   ];
+  if (enquiry.email) jobs.push(['customer', () => sendCustomerAcknowledgement(enquiry)]);
   const results = await Promise.allSettled(jobs.map(([, run]) => run()));
   results.forEach((result, index) => {
     const who = jobs[index][0];

@@ -70,15 +70,10 @@ export default function CourseDetail() {
         kicker={course.category === 'professional' ? 'Professional' : 'Recreational'}
         title={course.title}
         intro={course.excerpt || course.overview}
+        image={course.heroImage || '/frames/frame_0120.jpg'}
       />
       <section className="section section-dark">
         <div className="container">
-          {course.heroImage && (
-            <div className="cd-hero-photo">
-              <img src={course.heroImage} alt={course.title} />
-            </div>
-          )}
-
           {facts.length > 0 && (
             <div className="cd-facts">
               {facts.map(([label, value]) => (
@@ -87,6 +82,34 @@ export default function CourseDetail() {
                   <strong>{value}</strong>
                 </div>
               ))}
+            </div>
+          )}
+
+          {(course.plans || []).length > 0 && (
+            <div className="plan-wrap">
+              <h2>Price plans</h2>
+              {course.planNote && <p className="plan-note">{course.planNote}</p>}
+              <div className="plan-grid">
+                {course.plans.map((plan) => (
+                  <article className={`plan-card${plan.featured ? ' featured' : ''}`} key={plan.name + plan.price}>
+                    {plan.featured && <span className="plan-ribbon">Popular</span>}
+                    {plan.logo && <img className="plan-logo" src={plan.logo} alt="" />}
+                    <h3 className="plan-name">{plan.name}</h3>
+                    {plan.price && <p className="plan-price">{plan.price}</p>}
+                    {(plan.highlights || []).length > 0 && (
+                      <ul className="plan-points">
+                        {plan.highlights.filter(Boolean).map((point) => <li key={point}>{point}</li>)}
+                      </ul>
+                    )}
+                    <Link
+                      className="btn btn-primary"
+                      to={`/book-now?item=${encodeURIComponent(course.slug)}&plan=${encodeURIComponent(plan.name || '')}`}
+                    >
+                      Book this plan
+                    </Link>
+                  </article>
+                ))}
+              </div>
             </div>
           )}
 
@@ -108,7 +131,6 @@ export default function CourseDetail() {
               {(course.documents || []).length > 0 && <Block title="Documents"><Lines items={course.documents} /></Block>}
               {course.equipment && <Block title="Equipment"><Paragraphs text={course.equipment} /></Block>}
               {course.safety && <Block title="Safety"><Paragraphs text={course.safety} /></Block>}
-              {course.paymentInfo && <Block title="Price list"><Paragraphs text={course.paymentInfo} /></Block>}
               {(course.faqs || []).length > 0 && (
                 <Block title="Questions">
                   <FaqList items={course.faqs} />
@@ -129,7 +151,7 @@ export default function CourseDetail() {
               <span className="kicker">Book this course</span>
               <p className="price">{course.price || 'Ask for the rate'}</p>
               <p>Tell us your dates. We confirm the start, the meeting point at Beach No. 02, and what to bring.</p>
-              <Link className="btn btn-primary" to="/book-now">Book this course</Link>
+              <Link className="btn btn-course" to="/book-now">Book this course</Link>
               {settings.whatsapp && (
                 <a className="btn btn-ghost" href={waLink(settings.whatsapp, `Hello, I want to book ${course.title}.`)} target="_blank" rel="noreferrer">
                   WhatsApp the centre

@@ -73,6 +73,16 @@
 }
 .cd-side p { color: var(--text-2); font-size: 0.92rem; margin: 0 0 1rem; }
 .cd-side .btn { width: 100%; margin-bottom: 0.55rem; }
+.cd-side .btn-course {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.28);
+  box-shadow: none;
+}
+.cd-side .btn-course:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.45);
+}
 .cd-related { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
 .cd-related a { color: var(--cyan); font-weight: 600; }
 

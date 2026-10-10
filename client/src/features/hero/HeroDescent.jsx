@@ -4,14 +4,11 @@ import { initHero, isMobileHero, playFrameVideo } from './heroEngine.js';
 import { useScrollReveal, useCounter } from '../../hooks/useScrollReveal.jsx';
 import './hero.css';
 
-function statsFor(activityCount) {
-  return [
-    { num: activityCount, suffix: '', label: 'Activities' },
-    { num: 3000, suffix: '+', label: 'Happy Divers' },
-    { num: 8, suffix: '+', label: 'Years Experience' },
-    { num: 8, suffix: '', label: 'PADI Courses' },
-  ];
-}
+const HERO_STATS = [
+  { num: 30, suffix: 'K', label: 'Happy Divers' },
+  { num: 10, suffix: '+', label: 'Years Experience' },
+  { num: 8, suffix: '', label: 'PADI Courses' },
+];
 
 function StatItem({ num, suffix, label }) {
   const [ref, visible] = useScrollReveal();
@@ -24,10 +21,10 @@ function StatItem({ num, suffix, label }) {
   );
 }
 
-function HeroStats({ activityCount }) {
+function HeroStats() {
   return (
     <div className="hero-stats" aria-label="United Scuba in numbers">
-      {statsFor(activityCount).map((item) => <StatItem key={item.label} {...item} />)}
+      {HERO_STATS.map((item) => <StatItem key={item.label} {...item} />)}
     </div>
   );
 }
@@ -35,7 +32,7 @@ function HeroStats({ activityCount }) {
 const SCENES = [
   {
     kicker: 'Swaraj Dweep',
-    title: 'Scuba diving in Havelock, made clear.',
+    title: 'Scuba diving in Andaman, made clear.',
     lead: 'A first dive, a snorkel, or a PADI course from Beach No. 02. We explain everything first, stay with you, and pick a calm site for the day.',
   },
   {
@@ -73,7 +70,7 @@ function HeroActions() {
 
 const MOBILE_SCENE = {
   kicker: 'UNITED SCUBA',
-  title: 'See Havelock from underwater.',
+  title: 'See Andaman from underwater.',
   lead: 'Try scuba, snorkel a reef, or begin a PADI course from Beach No. 02. We explain it first, stay with you, and choose calm water for the day.',
 };
 
@@ -96,7 +93,7 @@ function MobileHero() {
   );
 }
 
-export default function HeroDescent({ activityCount = 0 }) {
+export default function HeroDescent() {
   const rootRef = useRef(null);
   const [mobile, setMobile] = useState(() => (typeof window !== 'undefined' ? isMobileHero() : true));
 
@@ -154,7 +151,7 @@ export default function HeroDescent({ activityCount = 0 }) {
             <span className="scroll-line" />
           </div>
 
-          <HeroStats activityCount={activityCount} />
+          <HeroStats />
         </div>
       </section>
     </div>

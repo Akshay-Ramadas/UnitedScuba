@@ -31,7 +31,7 @@ function CourseGroup({ title, items }) {
               <div className="course-img-wrap">
                 <img src={c.heroImage || '/frames/frame_0120.jpg'} alt={c.title} loading="lazy" />
                 <div className="course-overlay" />
-                <span className="course-badge">PADI</span>
+                <span className="course-badge"><img src="/assets/padi.png" alt="PADI" /></span>
               </div>
               <div className="course-body">
                 <h3>{c.title}</h3>

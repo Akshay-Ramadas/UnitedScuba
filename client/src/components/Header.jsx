@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { LOGO } from '../lib/api.js';
+import { LOGO, PADI_LOGO } from '../lib/api.js';
+import { useContent } from '../hooks/useContent.jsx';
 
 const LINKS = [
   ['/', 'Home'],
@@ -12,36 +13,58 @@ const LINKS = [
   ['/contact', 'Contact'],
 ];
 
-function SoundButton({ on, onToggle }) {
+function socialHref(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
+function SocialIcon({ href, label, children }) {
+  if (!href) return null;
   return (
-    <button className={`icon-btn${on ? ' on' : ''}`} type="button" onClick={onToggle} aria-label={on ? 'Turn sound off' : 'Turn sound on'} title={on ? 'Sound on' : 'Sound off'}>
-      {on ? (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M11 5 6 9H2v6h4l5 4V5z" />
-          <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
-        </svg>
-      ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M11 5 6 9H2v6h4l5 4V5z" />
-          <path d="m22 9-6 6M16 9l6 6" />
-        </svg>
+    <a className="icon-btn" href={href} target="_blank" rel="noreferrer" aria-label={label}>
+      {children}
+    </a>
+  );
+}
+
+function DiveMenu({ sites, pathname, onNavigate }) {
+  const [open, setOpen] = useState(false);
+  const active = pathname.startsWith('/dive-sites');
+  return (
+    <div
+      className={`nav-drop${open ? ' open' : ''}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <Link className={active ? 'active' : ''} to="/dive-sites" onClick={() => { setOpen(false); onNavigate?.(); }}>
+        Dive sites
+      </Link>
+      {sites.length > 0 && (
+        <button type="button" aria-label="Show dive sites" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+          ▾
+        </button>
       )}
-    </button>
+      {sites.length > 0 && (
+        <div className="nav-drop-panel">
+          {sites.map((site) => (
+            <Link key={site.slug} to={`/dive-sites/${site.slug}`} onClick={() => { setOpen(false); onNavigate?.(); }}>
+              {site.title}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function Header() {
   const { pathname } = useLocation();
+  const { settings, diveSites = [] } = useContent();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('us_sound') === 'on');
-
-  function toggleSound() {
-    const next = !soundOn;
-    localStorage.setItem('us_sound', next ? 'on' : 'off');
-    setSoundOn(next);
-    window.dispatchEvent(new CustomEvent('us-sound', { detail: next }));
-  }
+  const facebook = socialHref(settings.socials?.facebook);
+  const instagram = socialHref(settings.socials?.instagram);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -49,39 +72,75 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   const classes = ['site-header'];
   if (pathname === '/') classes.push('is-home');
   if (scrolled) classes.push('scrolled');
+
+  const before = LINKS.slice(0, 4);
+  const after = LINKS.slice(4);
 
   return (
     <header className={classes.join(' ')}>
       <div className="header-inner">
         <Link className="brand" to="/" onClick={() => setOpen(false)}>
-          <img src={LOGO} alt="United Scuba" />
+          <img className="brand-mark" src={LOGO} alt="United Scuba" />
+          <img className="brand-padi" src={PADI_LOGO} alt="PADI" />
         </Link>
         <nav className="nav-links">
-          {LINKS.map(([to, label]) => (
+          {before.map(([to, label]) => (
             <NavLink key={to} to={to} end={to === '/'}>
+              {label}
+            </NavLink>
+          ))}
+          <DiveMenu sites={diveSites} pathname={pathname} />
+          {after.map(([to, label]) => (
+            <NavLink key={to} to={to}>
               {label}
             </NavLink>
           ))}
         </nav>
         <div className="header-end">
-          <SoundButton on={soundOn} onToggle={toggleSound} />
+          <SocialIcon href={facebook} label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
+            </svg>
+          </SocialIcon>
+          <SocialIcon href={instagram} label="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+            </svg>
+          </SocialIcon>
           <Link className="btn btn-primary header-cta" to="/book-now">Book a dive</Link>
           <button
-          className="menu-toggle"
-          type="button"
-          aria-label={open ? 'Close menu' : 'Open menu'}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? '✕' : '☰'}
-        </button>
+            className="menu-toggle"
+            type="button"
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            onClick={() => setOpen((value) => !value)}
+          >
+            {open ? '✕' : '☰'}
+          </button>
         </div>
       </div>
       <div className={`mobile-panel${open ? ' open' : ''}`}>
-        {LINKS.map(([to, label]) => (
+        {before.map(([to, label]) => (
           <NavLink key={to} to={to} onClick={() => setOpen(false)} end={to === '/'}>
+            {label}
+          </NavLink>
+        ))}
+        <NavLink to="/dive-sites" onClick={() => setOpen(false)}>Dive sites</NavLink>
+        {diveSites.map((site) => (
+          <NavLink className="mobile-sub" key={site.slug} to={`/dive-sites/${site.slug}`} onClick={() => setOpen(false)}>
+            {site.title}
+          </NavLink>
+        ))}
+        {after.map(([to, label]) => (
+          <NavLink key={to} to={to} onClick={() => setOpen(false)}>
             {label}
           </NavLink>
         ))}

@@ -1,6 +1,7 @@
 import { Course } from './models/Course.js';
 import { Activity } from './models/Activity.js';
 import { Post } from './models/Post.js';
+import { DiveSite } from './models/DiveSite.js';
 import { Faq } from './models/Faq.js';
 import { Settings } from './models/Settings.js';
 import { defaultSettings } from './data/defaults.js';
@@ -55,6 +56,7 @@ export async function buildSitemapUrls() {
     ['/courses', '0.9'],
     ['/scuba-diving', '0.9'],
     ['/snorkelling', '0.9'],
+    ['/dive-sites', '0.8'],
     ['/gallery', '0.6'],
     ['/blog', '0.7'],
     ['/contact', '0.8'],
@@ -67,15 +69,18 @@ export async function buildSitemapUrls() {
   let courses = [];
   let activities = [];
   let posts = [];
+  let diveSites = [];
   if (mongoReady) {
     courses = await Course.find({ published: true }).select('slug updatedAt').lean();
     activities = await Activity.find({ published: true }).select('slug type updatedAt').lean();
     posts = await Post.find({ published: true }).select('slug updatedAt').lean();
+    diveSites = await DiveSite.find({ published: true }).select('slug updatedAt').lean();
   } else {
     const fb = fallbackContent();
     courses = fb.courses;
     activities = fb.activities;
     posts = fb.posts.filter((p) => p.published);
+    diveSites = (fb.diveSites || []).filter((site) => site.published !== false);
   }
 
   return [
@@ -87,6 +92,7 @@ export async function buildSitemapUrls() {
       lastmod: day(a.updatedAt) || stamp,
     })),
     ...posts.map((p) => ({ loc: `${base}/blog/${p.slug}`, priority: '0.6', lastmod: day(p.updatedAt) || stamp })),
+    ...diveSites.map((site) => ({ loc: `${base}/dive-sites/${site.slug}`, priority: '0.7', lastmod: day(site.updatedAt) || stamp })),
   ];
 }
 
@@ -119,12 +125,14 @@ export async function llmsTxt() {
   let activities = [];
   let posts = [];
   let faqs = [];
+  let diveSites = [];
   if (mongoReady) {
-    [courses, activities, posts, faqs] = await Promise.all([
+    [courses, activities, posts, faqs, diveSites] = await Promise.all([
       Course.find({ published: true }).select('slug title excerpt').sort({ sortOrder: 1 }).lean(),
       Activity.find({ published: true }).select('slug type title excerpt').sort({ sortOrder: 1 }).lean(),
       Post.find({ published: true }).select('slug title excerpt').sort({ publishedAt: -1 }).lean(),
       Faq.find().select('question answer page').sort({ page: 1, sortOrder: 1 }).lean(),
+      DiveSite.find({ published: true }).select('slug title excerpt').sort({ sortOrder: 1 }).lean(),
     ]);
   } else {
     const fb = fallbackContent();
@@ -132,6 +140,7 @@ export async function llmsTxt() {
     activities = fb.activities;
     posts = (fb.posts || []).filter((post) => post.published);
     faqs = fb.faqs || [];
+    diveSites = (fb.diveSites || []).filter((site) => site.published !== false);
   }
 
   const lines = [
@@ -155,6 +164,7 @@ export async function llmsTxt() {
     `- [Home](${base}/): ${settings.seoTitle || ''}`,
     `- [Courses](${base}/courses): PADI recreational and professional courses`,
     `- [Scuba diving](${base}/scuba-diving): Fun dives and dive trips`,
+    `- [Dive sites](${base}/dive-sites): Reefs we dive around Swaraj Dweep`,
     `- [Snorkelling](${base}/snorkelling): Shore and boat snorkelling`,
     `- [Gallery](${base}/gallery): Photos and video`,
     `- [Blog](${base}/blog): Dive guides`,
@@ -166,6 +176,12 @@ export async function llmsTxt() {
     lines.push('', '## Courses');
     for (const course of courses) {
       lines.push(`- [${course.title}](${base}/courses/${course.slug}): ${course.excerpt || ''}`.trim());
+    }
+  }
+  if (diveSites.length) {
+    lines.push('', '## Dive sites');
+    for (const site of diveSites) {
+      lines.push(`- [${site.title}](${base}/dive-sites/${site.slug}): ${site.excerpt || ''}`.trim());
     }
   }
   if (activities.length) {

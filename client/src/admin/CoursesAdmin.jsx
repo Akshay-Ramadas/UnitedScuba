@@ -26,6 +26,8 @@ function faqArr(str) {
     .map(([q, a]) => ({ q: q.trim(), a: (a || '').trim() }));
 }
 
+const EMPTY_PLAN = { name: '', price: '', logo: '', highlights: '', featured: false };
+
 const EMPTY = {
   title: '', category: 'recreational', excerpt: '',
   heroImage: '', overview: '', whoFor: '',
@@ -33,6 +35,7 @@ const EMPTY = {
   duration: '', price: 'On request', certification: '',
   availableDates: 'Enquire for upcoming dates',
   included: '', notIncluded: '', faqs: '',
+  planNote: '', plans: [],
   featured: false, published: true, sortOrder: 0,
   /* preserved but hidden */
   slug: '', seoTitle: '', seoDescription: '',
@@ -46,6 +49,13 @@ function fromItem(item) {
     included:       lv(item.included),
     notIncluded:    lv(item.notIncluded),
     faqs:           faqStr(item.faqs),
+    plans: (item.plans || []).map((plan) => ({
+      name: plan.name || '',
+      price: plan.price || '',
+      logo: plan.logo || '',
+      highlights: lv(plan.highlights),
+      featured: Boolean(plan.featured),
+    })),
   };
 }
 
@@ -57,6 +67,16 @@ function toBody(form) {
     included:      tl(form.included),
     notIncluded:   tl(form.notIncluded),
     faqs:          faqArr(form.faqs),
+    plans: (form.plans || [])
+      .filter((plan) => String(plan.name || '').trim() || String(plan.price || '').trim())
+      .map((plan) => ({
+        name: String(plan.name || '').trim(),
+        price: String(plan.price || '').trim(),
+        logo: plan.logo || '',
+        highlights: tl(plan.highlights),
+        featured: Boolean(plan.featured),
+      })),
+    paymentInfo: '',
     sortOrder:     Number(form.sortOrder) || 0,
     /* Let server auto-generate if not present */
     seoTitle:      form.seoTitle || '',
@@ -66,6 +86,44 @@ function toBody(form) {
 }
 
 /* ── Section wrapper ── */
+function PlanEditor({ plans, onChange }) {
+  function update(index, key, value) {
+    onChange(plans.map((plan, i) => (i === index ? { ...plan, [key]: value } : plan)));
+  }
+
+  return (
+    <div className="plan-editor">
+      <div className="plan-editor-grid">
+        {plans.map((plan, index) => (
+          <div className={`plan-editor-card${plan.featured ? ' featured' : ''}`} key={index}>
+            <div className="plan-editor-top">
+              <span>Plan {index + 1}</span>
+              <button type="button" onClick={() => onChange(plans.filter((_, i) => i !== index))}>Remove</button>
+            </div>
+            <ImageField value={plan.logo} onChange={(value) => update(index, 'logo', value)} label="Plan logo" />
+            <Field label="Plan name">
+              <Input value={plan.name} onChange={(e) => update(index, 'name', e.target.value)} placeholder="e.g. Premium Adventurer" />
+            </Field>
+            <Field label="Price">
+              <Input value={plan.price} onChange={(e) => update(index, 'price', e.target.value)} placeholder="e.g. INR 9,000" />
+            </Field>
+            <Field label="Highlights" hint="optional, one per line">
+              <Textarea value={plan.highlights} onChange={(e) => update(index, 'highlights', e.target.value)} style={{ minHeight: 88 }} />
+            </Field>
+            <label className="plan-editor-flag">
+              <input type="checkbox" checked={plan.featured} onChange={(e) => update(index, 'featured', e.target.checked)} />
+              Highlight this plan
+            </label>
+          </div>
+        ))}
+      </div>
+      <Button type="button" variant="outline" onClick={() => onChange([...(plans || []), { ...EMPTY_PLAN }])}>
+        <Plus size={14} /> Add plan
+      </Button>
+    </div>
+  );
+}
+
 function Section({ title, desc, children }) {
   return (
     <Card>
@@ -99,7 +157,9 @@ function CourseCard({ course, onEdit, onDelete }) {
           {course.featured && <Badge style={{ background:'hsl(38 92% 50%)', color:'#fff' }}>★ Featured</Badge>}
         </div>
         {course.excerpt && <p className="sh-item-card-excerpt">{course.excerpt.slice(0, 100)}{course.excerpt.length > 100 ? '…' : ''}</p>}
-        {course.price && <p style={{ fontSize:'0.78rem', fontWeight:600, color:'hsl(221 83% 53%)', marginTop:'0.35rem' }}>{course.price}</p>}
+        {(course.plans || []).length > 0
+          ? <p style={{ fontSize:'0.78rem', fontWeight:600, color:'hsl(221 83% 53%)', marginTop:'0.35rem' }}>{course.plans.length} price plan{course.plans.length === 1 ? '' : 's'}</p>
+          : course.price && <p style={{ fontSize:'0.78rem', fontWeight:600, color:'hsl(221 83% 53%)', marginTop:'0.35rem' }}>{course.price}</p>}
       </div>
       <div className="sh-item-card-footer">
         <Button variant="outline" size="sm" style={{ flex:1, justifyContent:'center' }} onClick={() => onEdit(course)}><Pencil size={13}/> Edit</Button>
@@ -205,8 +265,8 @@ export default function CoursesAdmin() {
                   <option value="professional">Professional</option>
                 </select>
               </Field>
-              <Field label="Price">
-                <Input value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. ₹8,500 / On request" />
+              <Field label="Starting price" hint="shown beside the plans">
+                <Input value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. From INR 6,000" />
               </Field>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem' }}>
@@ -242,6 +302,13 @@ export default function CoursesAdmin() {
             <Field label="Who is this for?" hint="Age, fitness, swimming ability requirements, etc.">
               <Textarea value={form.whoFor} onChange={e => set('whoFor', e.target.value)} style={{ minHeight:80 }} />
             </Field>
+          </Section>
+
+          <Section title="Price plans" desc="Each course can have its own plans. Logo and highlights are optional.">
+            <Field label="Note" hint="optional, such as GST">
+              <Input value={form.planNote || ''} onChange={e => set('planNote', e.target.value)} placeholder="Prices are without 18% GST." />
+            </Field>
+            <PlanEditor plans={form.plans || []} onChange={(plans) => set('plans', plans)} />
           </Section>
 
           {/* 4. What you'll learn */}

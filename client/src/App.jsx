@@ -8,6 +8,8 @@ import CourseDetail from './pages/CourseDetail.jsx';
 import ScubaDiving from './pages/ScubaDiving.jsx';
 import Snorkelling from './pages/Snorkelling.jsx';
 import ActivityDetail from './pages/ActivityDetail.jsx';
+import DiveSites from './pages/DiveSites.jsx';
+import DiveSiteDetail from './pages/DiveSiteDetail.jsx';
 import Gallery from './pages/Gallery.jsx';
 import Blog from './pages/Blog.jsx';
 import BlogPost from './pages/BlogPost.jsx';
@@ -48,6 +50,8 @@ function Public() {
         <Route path="/about" element={<About />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/courses/:slug" element={<CourseDetail />} />
+        <Route path="/dive-sites" element={<DiveSites />} />
+        <Route path="/dive-sites/:slug" element={<DiveSiteDetail />} />
         <Route path="/scuba-diving" element={<ScubaDiving />} />
         <Route path="/scuba-diving/:slug" element={<ActivityDetail />} />
         <Route path="/snorkelling" element={<Snorkelling />} />

@@ -10,11 +10,10 @@ import { lines, pageFields } from '../content/pageCopy.js';
 import { useScrollReveal, useCounter } from '../hooks/useScrollReveal.jsx';
 
 /* ── Section wrapper with reveal ── */
-function mobileStats(activityCount) {
+function mobileStats() {
   return [
-    { num: activityCount, suffix: '', label: 'Activities' },
-    { num: 3000, suffix: '+', label: 'Happy Divers' },
-    { num: 8, suffix: '+', label: 'Years Experience' },
+    { num: 30, suffix: 'K', label: 'Happy Divers' },
+    { num: 10, suffix: '+', label: 'Years Experience' },
     { num: 8, suffix: '', label: 'PADI Courses' },
   ];
 }
@@ -143,11 +142,11 @@ export default function Home() {
       />
 
       {/* ── Hero (300-frame scroll animation — untouched) ── */}
-      <HeroDescent activityCount={activities.length} />
+      <HeroDescent />
 
       <div className="stat-strip stat-strip-mobile">
         <div className="stat-strip-grid">
-          {mobileStats(activities.length).map((item) => <MobileStat key={item.label} {...item} />)}
+          {mobileStats().map((item) => <MobileStat key={item.label} {...item} />)}
         </div>
       </div>
 
@@ -237,7 +236,7 @@ export default function Home() {
                   <div className="course-img-wrap">
                     <img src={c.heroImage || '/frames/frame_0060.jpg'} alt={c.title} loading="lazy" />
                     <div className="course-overlay" />
-                    <span className="course-badge">PADI</span>
+                    <span className="course-badge"><img src="/assets/padi.png" alt="PADI" /></span>
                   </div>
                   <div className="course-body">
                     <h3>{c.title}</h3>

@@ -283,7 +283,7 @@ export function initHero(root) {
   }
 
   function updateHUD(progress, activeSceneIndex) {
-    const depth = Math.round(progress * 120);
+    const depth = Math.round(progress * 30);
     if (depthVal) depthVal.textContent = String(depth);
     if (gaugeFill) gaugeFill.style.strokeDashoffset = String(264 * (1 - progress));
     if (tempVal) tempVal.textContent = `${(28 - progress * 14).toFixed(1)}°C`;

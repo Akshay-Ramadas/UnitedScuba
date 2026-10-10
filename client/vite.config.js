@@ -26,6 +26,7 @@ export default defineConfig({
       '/api': 'http://localhost:5000',
       '/sitemap.xml': 'http://localhost:5000',
       '/robots.txt': 'http://localhost:5000',
+      '/llms.txt': 'http://localhost:5000',
     },
   },
 });

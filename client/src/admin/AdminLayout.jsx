@@ -4,7 +4,7 @@ import { useAdminAuth } from './auth.jsx';
 import { LOGO } from '../lib/api.js';
 import { Button } from '../components/ui/button.jsx';
 import {
-  LayoutDashboard, Mail, GraduationCap, Waves, ImageIcon,
+  LayoutDashboard, Mail, GraduationCap, Waves, MapPin, ImageIcon,
   HelpCircle, Star, PenLine, Settings, LogOut, ExternalLink, Menu, X,
 } from '../components/ui/icons.jsx';
 import './shadcn.css';
@@ -14,6 +14,7 @@ const NAV = [
   { to: '/admin/enquiries',  label: 'Enquiries',         Icon: Mail },
   { to: '/admin/courses',    label: 'Courses',           Icon: GraduationCap },
   { to: '/admin/activities', label: 'Activities',        Icon: Waves },
+  { to: '/admin/dive-sites', label: 'Dive sites',        Icon: MapPin },
   { to: '/admin/gallery',    label: 'Gallery',           Icon: ImageIcon },
   { to: '/admin/faqs',       label: 'FAQs',              Icon: HelpCircle },
   { to: '/admin/reviews',    label: 'Reviews',           Icon: Star },

@@ -7,6 +7,7 @@ import Dashboard from './Dashboard.jsx';
 import Enquiries from './Enquiries.jsx';
 import CoursesAdmin from './CoursesAdmin.jsx';
 import ActivitiesAdmin from './ActivitiesAdmin.jsx';
+import DiveSitesAdmin from './DiveSitesAdmin.jsx';
 import GalleryAdmin from './GalleryAdmin.jsx';
 import FaqsAdmin from './FaqsAdmin.jsx';
 import ReviewsAdmin from './ReviewsAdmin.jsx';
@@ -29,6 +30,7 @@ export default function AdminApp() {
           <Route path="enquiries" element={<Enquiries />} />
           <Route path="courses" element={<CoursesAdmin />} />
           <Route path="activities" element={<ActivitiesAdmin />} />
+          <Route path="dive-sites" element={<DiveSitesAdmin />} />
           <Route path="gallery" element={<GalleryAdmin />} />
           <Route path="faqs" element={<FaqsAdmin />} />
           <Route path="reviews" element={<ReviewsAdmin />} />

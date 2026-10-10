@@ -51,21 +51,54 @@ function extraTypes(activities) {
   return names.sort((a, b) => a.localeCompare(b));
 }
 
+const EMPTY_PLAN = { name: '', price: '', logo: '', highlights: '', featured: false };
+
 const EMPTY = {
   title: '', type: 'scuba', excerpt: '', heroImage: '',
   overview: '', whoCanParticipate: '',
   duration: '', price: 'On request', meetingPoint: '',
+  audience: '', noSwimming: false,
   requirements: '', whatToBring: '',
   included: '', notIncluded: '', faqs: '',
+  plans: [],
   featured: false, published: true, sortOrder: 0,
   slug: '', seoTitle: '', seoDescription: '',
 };
 
 function fromItem(item) {
-  return { ...item, whatToBring: lv(item.whatToBring), included: lv(item.included), notIncluded: lv(item.notIncluded), faqs: faqStr(item.faqs) };
+  return {
+    ...item,
+    whatToBring: lv(item.whatToBring),
+    included: lv(item.included),
+    notIncluded: lv(item.notIncluded),
+    faqs: faqStr(item.faqs),
+    plans: (item.plans || []).map((plan) => ({
+      name: plan.name || '',
+      price: plan.price || '',
+      logo: plan.logo || '',
+      highlights: lv(plan.highlights),
+      featured: Boolean(plan.featured),
+    })),
+  };
 }
 function toBody(form) {
-  return { ...form, whatToBring: tl(form.whatToBring), included: tl(form.included), notIncluded: tl(form.notIncluded), faqs: faqArr(form.faqs), sortOrder: Number(form.sortOrder) || 0 };
+  return {
+    ...form,
+    whatToBring: tl(form.whatToBring),
+    included: tl(form.included),
+    notIncluded: tl(form.notIncluded),
+    faqs: faqArr(form.faqs),
+    plans: (form.plans || [])
+      .filter((plan) => plan.name.trim() || plan.price.trim())
+      .map((plan) => ({
+        name: plan.name.trim(),
+        price: plan.price.trim(),
+        logo: plan.logo || '',
+        highlights: tl(plan.highlights),
+        featured: Boolean(plan.featured),
+      })),
+    sortOrder: Number(form.sortOrder) || 0,
+  };
 }
 
 function Section({ title, desc, children }) {
@@ -81,6 +114,53 @@ function Field({ label, hint, children }) {
     <div className="sh-field">
       <Label>{label}{hint && <span className="sh-label-hint"> — {hint}</span>}</Label>
       {children}
+    </div>
+  );
+}
+
+function PlanEditor({ plans, onChange }) {
+  function update(index, key, value) {
+    onChange(plans.map((plan, i) => (i === index ? { ...plan, [key]: value } : plan)));
+  }
+
+  return (
+    <div className="plan-editor">
+      <div className="plan-editor-grid">
+        {plans.map((plan, index) => (
+          <div className={`plan-editor-card${plan.featured ? ' featured' : ''}`} key={index}>
+            <div className="plan-editor-top">
+              <span>Plan {index + 1}</span>
+              <button type="button" onClick={() => onChange(plans.filter((_, i) => i !== index))}>Remove</button>
+            </div>
+            <ImageField value={plan.logo} onChange={(value) => update(index, 'logo', value)} label="Plan logo" />
+            <Field label="Plan name">
+              <Input value={plan.name} onChange={(e) => update(index, 'name', e.target.value)} placeholder="e.g. Premium Adventurer" />
+            </Field>
+            <Field label="Price">
+              <Input value={plan.price} onChange={(e) => update(index, 'price', e.target.value)} placeholder="e.g. INR 9,000" />
+            </Field>
+            <Field label="Highlights" hint="optional, one per line">
+              <Textarea
+                value={plan.highlights}
+                onChange={(e) => update(index, 'highlights', e.target.value)}
+                placeholder={"One shore dive\nVideos and photos\nBoat dive"}
+                style={{ minHeight: 88 }}
+              />
+            </Field>
+            <label className="plan-editor-flag">
+              <input
+                type="checkbox"
+                checked={plan.featured}
+                onChange={(e) => update(index, 'featured', e.target.checked)}
+              />
+              Highlight this plan
+            </label>
+          </div>
+        ))}
+      </div>
+      <Button type="button" variant="outline" onClick={() => onChange([...(plans || []), { ...EMPTY_PLAN }])}>
+        <Plus size={14} /> Add plan
+      </Button>
     </div>
   );
 }
@@ -106,7 +186,9 @@ function ActivityCard({ activity, onEdit, onDelete }) {
           {activity.featured && <Badge style={{ background: 'hsl(38 92% 50%)', color: '#fff' }}>★ Featured</Badge>}
         </div>
         {activity.excerpt && <p className="sh-item-card-excerpt">{activity.excerpt.slice(0, 100)}{activity.excerpt.length > 100 ? '…' : ''}</p>}
-        {activity.price && <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'hsl(221 83% 53%)', marginTop: '0.35rem' }}>{activity.price}</p>}
+        {(activity.plans || []).length > 0
+          ? <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'hsl(221 83% 53%)', marginTop: '0.35rem' }}>{activity.plans.length} price plan{activity.plans.length === 1 ? '' : 's'}</p>
+          : activity.price && <p style={{ fontSize: '0.78rem', fontWeight: 600, color: 'hsl(221 83% 53%)', marginTop: '0.35rem' }}>{activity.price}</p>}
       </div>
       <div className="sh-item-card-footer">
         <Button variant="outline" size="sm" style={{ flex: 1, justifyContent: 'center' }} onClick={() => onEdit(activity)}><Pencil size={13} /> Edit</Button>
@@ -248,8 +330,16 @@ export default function ActivitiesAdmin() {
                   />
                 )}
               </Field>
-              <Field label="Price">
-                <Input value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. ₹3,500 / On request" />
+              <Field label="Who it is for" hint="where it appears on the scuba page">
+                <select className="sh-select" value={form.audience || ''} onChange={(e) => set('audience', e.target.value)}>
+                  <option value="">Not grouped</option>
+                  <option value="beginner">Beginners and non-swimmers</option>
+                  <option value="certified">Certified divers</option>
+                  <option value="snorkelling">Snorkelling</option>
+                </select>
+              </Field>
+              <Field label="Starting price" hint="shown on the scuba page card">
+                <Input value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. From INR 6,000" />
               </Field>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
@@ -262,6 +352,11 @@ export default function ActivitiesAdmin() {
                 <input type="checkbox" id="apublished" checked={form.published} style={{ width: 16, height: 16, accentColor: 'hsl(221 83% 53%)', cursor: 'pointer' }}
                   onChange={e => set('published', e.target.checked)} />
                 <Label htmlFor="apublished" style={{ marginBottom: 0, cursor: 'pointer' }}>Published (visible on site)</Label>
+              </div>
+              <div className="sh-field sh-field-row">
+                <input type="checkbox" id="anoswim" checked={Boolean(form.noSwimming)} style={{ width: 16, height: 16, accentColor: 'hsl(221 83% 53%)', cursor: 'pointer' }}
+                  onChange={e => set('noSwimming', e.target.checked)} />
+                <Label htmlFor="anoswim" style={{ marginBottom: 0, cursor: 'pointer' }}>No swimming needed</Label>
               </div>
             </div>
           </Section>
@@ -284,6 +379,10 @@ export default function ActivitiesAdmin() {
               <Textarea value={form.whoCanParticipate} onChange={e => set('whoCanParticipate', e.target.value)} style={{ minHeight: 80 }}
                 placeholder="Age, swimming ability, health requirements…" />
             </Field>
+          </Section>
+
+          <Section title="Price plans" desc="Add a card for each plan. Logo and highlights are optional.">
+            <PlanEditor plans={form.plans || []} onChange={(plans) => set('plans', plans)} />
           </Section>
 
           <Section title="Schedule & logistics">

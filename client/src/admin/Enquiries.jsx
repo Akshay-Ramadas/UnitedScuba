@@ -144,6 +144,18 @@ function DetailPanel({ item, onStatusChange }) {
                 <div className="sh-detail-v">{item.preferredItem}</div>
               </div>
             )}
+            {item.plan && (
+              <div className="sh-detail-kv">
+                <div className="sh-detail-k">Price plan</div>
+                <div className="sh-detail-v">{item.plan}</div>
+              </div>
+            )}
+            {item.diveSites && (
+              <div className="sh-detail-kv">
+                <div className="sh-detail-k">Dive sites</div>
+                <div className="sh-detail-v">{item.diveSites}</div>
+              </div>
+            )}
             {item.diverLevel && (
               <div className="sh-detail-kv">
                 <div className="sh-detail-k">Diver level</div>

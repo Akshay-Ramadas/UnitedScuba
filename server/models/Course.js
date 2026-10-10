@@ -5,6 +5,17 @@ const faqItem = new mongoose.Schema(
   { _id: false }
 );
 
+const planItem = new mongoose.Schema(
+  {
+    name: { type: String, default: '' },
+    price: { type: String, default: '' },
+    logo: { type: String, default: '' },
+    highlights: { type: [String], default: [] },
+    featured: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const courseSchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, index: true },
@@ -30,6 +41,8 @@ const courseSchema = new mongoose.Schema(
     documents: { type: [String], default: [] },
     price: { type: String, default: 'On request' },
     paymentInfo: { type: String, default: '' },
+    planNote: { type: String, default: '' },
+    plans: { type: [planItem], default: [] },
     availableDates: { type: String, default: 'Enquire for upcoming dates' },
     faqs: { type: [faqItem], default: [] },
     relatedSlugs: { type: [String], default: [] },

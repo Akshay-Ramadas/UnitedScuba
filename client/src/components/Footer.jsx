@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useContent } from '../hooks/useContent.jsx';
-import { LOGO, waLink } from '../lib/api.js';
+import { LOGO, PADI_LOGO, waLink } from '../lib/api.js';
 
 function SocialLink({ href, label, children }) {
   if (!href) return null;
@@ -48,7 +48,10 @@ export default function Footer() {
       </div>
       <div className="container footer-grid">
         <div className="footer-brand">
-          <img src={LOGO} alt="United Scuba" />
+          <div className="footer-logos">
+            <img src={LOGO} alt="United Scuba" />
+            <img className="footer-padi" src={PADI_LOGO} alt="PADI" />
+          </div>
           <p>{settings.tagline || 'Scuba diving in the Andaman Islands'}</p>
           <p style={{ marginTop: '0.5rem' }}>{settings.location}</p>
         </div>
@@ -56,6 +59,7 @@ export default function Footer() {
           <h4>Explore</h4>
           <Link to="/courses">Courses</Link>
           <Link to="/scuba-diving">Scuba diving</Link>
+          <Link to="/dive-sites">Dive sites</Link>
           <Link to="/gallery">Gallery</Link>
           <Link to="/blog">Blog</Link>
           <Link to="/about">About us</Link>

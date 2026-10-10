@@ -11,6 +11,7 @@ const empty = {
   reviews: [],
   posts: [],
   gallery: [],
+  diveSites: [],
 };
 
 function byOrder(list) {
@@ -30,6 +31,7 @@ export function ContentProvider({ children }) {
         reviews: byOrder(next.reviews),
         posts: byOrder(next.posts),
         gallery: byOrder(next.gallery),
+        diveSites: byOrder(next.diveSites),
         faqs: [...(next.faqs || [])].sort((a, b) => (
           String(a.page || '').localeCompare(String(b.page || ''))
           || (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)

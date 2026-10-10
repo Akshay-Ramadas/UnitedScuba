@@ -28,3 +28,4 @@ export function waLink(number, text = 'Hello United Scuba, I would like to enqui
 
 export const LOGO = '/assets/United%20Scuba%20LOGO%20FINAL_HORIZONTAL.png';
 export const LOGO_MARK = '/assets/United%20Scuba%20LOGO%20FINAL_PRIMARY.png';
+export const PADI_LOGO = '/assets/padi.png';

@@ -7,6 +7,7 @@ import { GalleryItem } from '../models/GalleryItem.js';
 import { Faq } from '../models/Faq.js';
 import { Review } from '../models/Review.js';
 import { Post } from '../models/Post.js';
+import { DiveSite } from '../models/DiveSite.js';
 import { Enquiry } from '../models/Enquiry.js';
 import { mongoReady } from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
@@ -180,6 +181,7 @@ const autoFields = (body) => {
 
 crud('/courses',    Course,   autoFields);
 crud('/activities', Activity, autoFields);
+crud('/dive-sites', DiveSite, autoFields);
 crud('/gallery', GalleryItem, null, {
   beforeCreate: async (body) => {
     const order = Number(body.sortOrder);

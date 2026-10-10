@@ -4,7 +4,7 @@ const enquirySchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     phone: { type: String, required: true },
-    email: { type: String, required: true },
+    email: { type: String, default: '' },
     preferredDate: { type: String, default: '' },
     numberOfPeople: { type: Number, default: 1 },
     activityType: {
@@ -14,12 +14,14 @@ const enquirySchema = new mongoose.Schema(
     },
     diverLevel: {
       type: String,
-      enum: ['beginner', 'certified', 'not-sure', ''],
+      enum: ['beginner', 'certified', 'not-sure', 'snorkelling', ''],
       default: '',
     },
     preferredItem: { type: String, default: '' },
+    diveSites: { type: String, default: '' },
+    plan: { type: String, default: '' },
     message: { type: String, default: '' },
-    source: { type: String, enum: ['book-now', 'contact'], default: 'book-now' },
+    source: { type: String, enum: ['book-now', 'contact', 'plan-dive'], default: 'book-now' },
     status: {
       type: String,
       enum: ['new', 'contacted', 'in-progress', 'completed', 'closed'],

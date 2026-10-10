@@ -28,13 +28,41 @@ export default function ActivityDetail() {
         image={item.heroImage}
         jsonLd={graphJsonLd(faqJsonLd(item.faqs))}
       />
-      <PageHero kicker={kicker} title={item.title} intro={item.overview || item.excerpt} />
+      <PageHero kicker={kicker} title={item.title} intro={item.overview || item.excerpt} image={item.heroImage} />
       <section className="section">
         <div className="container prose">
           {text(item.whoCanParticipate) && <><h2>Who can participate</h2><p>{item.whoCanParticipate}</p></>}
           {text(item.details) && <><h2>Experience details</h2><p>{item.details}</p></>}
           {text(item.duration) && <><h2>Duration</h2><p>{item.duration}</p></>}
-          {text(item.price) && <><h2>Price</h2><p>{item.price}</p></>}
+          {(item.plans || []).length > 0 ? (
+            <div className="plan-wrap">
+              <h2>Price plans</h2>
+              <div className="plan-grid">
+                {item.plans.map((plan) => (
+                  <article className={`plan-card${plan.featured ? ' featured' : ''}`} key={plan.name + plan.price}>
+                    {plan.featured && <span className="plan-ribbon">Popular</span>}
+                    {plan.logo && <img className="plan-logo" src={plan.logo} alt="" />}
+                    <h3 className="plan-name">{plan.name}</h3>
+                    {plan.price && <p className="plan-price">{plan.price}</p>}
+                    {list(plan.highlights).length > 0 && (
+                      <ul className="plan-points">
+                        {list(plan.highlights).map((point) => <li key={point}>{point}</li>)}
+                      </ul>
+                    )}
+                    <Link
+                      className="btn btn-primary"
+                      to={`/book-now?item=${encodeURIComponent(item.slug)}&plan=${encodeURIComponent(plan.name || '')}`}
+                    >
+                      Book this plan
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : (
+            text(item.price) && <><h2>Price</h2><p>{item.price}</p></>
+          )}
+          <CtaBanner title={`Book ${item.title}`} text="Tell us your dates. We confirm this dive from Beach No. 02." />
           {list(item.included).length > 0 && <><h2>What is included</h2><ul className="list">{list(item.included).map((i) => <li key={i}>{i}</li>)}</ul></>}
           {list(item.notIncluded).length > 0 && <><h2>What is not included</h2><ul className="list">{list(item.notIncluded).map((i) => <li key={i}>{i}</li>)}</ul></>}
           {text(item.equipment) && <><h2>Equipment</h2><p>{item.equipment}</p></>}
@@ -49,7 +77,6 @@ export default function ActivityDetail() {
               <div className="gallery-grid">{shots.map((g) => <img key={g.url} src={g.url} alt={g.alt} loading="lazy" />)}</div>
             </>
           )}
-          <div style={{ marginTop: 24 }}><CtaBanner title={`Book ${item.title}`} /></div>
         </div>
       </section>
     </>

@@ -5,10 +5,23 @@ const faqItem = new mongoose.Schema(
   { _id: false }
 );
 
+const planItem = new mongoose.Schema(
+  {
+    name: { type: String, default: '' },
+    price: { type: String, default: '' },
+    logo: { type: String, default: '' },
+    highlights: { type: [String], default: [] },
+    featured: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const activitySchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, index: true },
     type: { type: String, required: true, trim: true, maxlength: 40 },
+    audience: { type: String, enum: ['beginner', 'certified', 'snorkelling', ''], default: '' },
+    noSwimming: { type: Boolean, default: false },
     title: { type: String, required: true },
     excerpt: { type: String, default: '' },
     heroImage: { type: String, default: '' },
@@ -19,6 +32,7 @@ const activitySchema = new mongoose.Schema(
     details: { type: String, default: '' },
     duration: { type: String, default: '' },
     price: { type: String, default: 'On request' },
+    plans: { type: [planItem], default: [] },
     included: { type: [String], default: [] },
     notIncluded: { type: [String], default: [] },
     equipment: { type: String, default: '' },

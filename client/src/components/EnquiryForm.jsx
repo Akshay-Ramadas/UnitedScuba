@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useContent } from '../hooks/useContent.jsx';
 import { api, waLink } from '../lib/api.js';
 import '../styles/contact.css';
@@ -7,7 +8,7 @@ const EMPTY = {
   name: '', phone: '', email: '',
   preferredDate: '', numberOfPeople: 1,
   activityType: 'scuba', diverLevel: 'beginner',
-  preferredItem: '', message: '',
+  preferredItem: '', plan: '', message: '',
   website: '', whatsappOptIn: true,
 };
 
@@ -26,9 +27,11 @@ const LEVELS = [
 
 export default function EnquiryForm({ source = 'book-now' }) {
   const { settings, courses, activities } = useContent();
+  const [params] = useSearchParams();
   const [form,   setForm]   = useState(EMPTY);
   const [status, setStatus] = useState('idle'); // idle | saving | done
   const [error,  setError]  = useState('');
+  const appliedLink = useRef(false);
 
   const isContact = source === 'contact';
 
@@ -40,9 +43,52 @@ export default function EnquiryForm({ source = 'book-now' }) {
     })),
   ], [courses, activities]);
 
+  useEffect(() => {
+    if (appliedLink.current || isContact) return;
+    const slug = params.get('item');
+    if (!slug) {
+      appliedLink.current = true;
+      return;
+    }
+    if (!activities.length && !courses.length) return;
+    appliedLink.current = true;
+    const activity = activities.find((item) => item.slug === slug);
+    const course = courses.find((item) => item.slug === slug);
+    const picked = activity || course;
+    if (!picked) return;
+    const planName = params.get('plan') || '';
+    const chosen = (picked.plans || []).find((plan) => plan.name === planName);
+    const activityType = course && !activity
+      ? 'course'
+      : activity?.type === 'snorkelling'
+        ? 'snorkelling'
+        : activity?.type === 'scuba'
+          ? 'scuba'
+          : 'general';
+    setForm((current) => ({
+      ...current,
+      activityType,
+      preferredItem: picked.title,
+      plan: chosen?.name || '',
+    }));
+  }, [activities, courses, isContact, params]);
+
+  const selectedOffer = activities.find((item) => item.title === form.preferredItem)
+    || courses.find((item) => item.title === form.preferredItem);
+  const plans = selectedOffer?.plans || [];
+
   function set(e) {
     const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
+    setForm((f) => {
+      if (name !== 'preferredItem') {
+        return { ...f, [name]: type === 'checkbox' ? checked : value };
+      }
+      const offer = activities.find((item) => item.title === value)
+        || courses.find((item) => item.title === value);
+      const names = (offer?.plans || []).map((plan) => plan.name).filter(Boolean);
+      const plan = names.includes(f.plan) ? f.plan : (names.length === 1 ? names[0] : '');
+      return { ...f, preferredItem: value, plan };
+    });
   }
 
   function pick(name, value) {
@@ -197,6 +243,24 @@ export default function EnquiryForm({ source = 'book-now' }) {
                       <option key={o.value} value={o.value}>{o.group}: {o.value}</option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {plans.length > 0 && (
+                <div className="enq-field">
+                  <span className="enq-label">Price plan</span>
+                  <div className="enq-choices" role="group" aria-label="Price plan">
+                    {plans.map((plan) => (
+                      <button
+                        key={`${plan.name}-${plan.price}`}
+                        type="button"
+                        className={form.plan === plan.name ? 'on' : ''}
+                        onClick={() => pick('plan', plan.name)}
+                      >
+                        {plan.name}{plan.price ? ` · ${plan.price}` : ''}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

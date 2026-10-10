@@ -60,6 +60,8 @@ function enquirySummary(enquiry) {
     <p><strong>Activity:</strong> ${escapeHtml(enquiry.activityType)}</p>
     <p><strong>Diver level:</strong> ${escapeHtml(enquiry.diverLevel || '—')}</p>
     <p><strong>Preferred course / activity:</strong> ${escapeHtml(enquiry.preferredItem || '—')}</p>
+    <p><strong>Dive sites:</strong> ${escapeHtml(enquiry.diveSites || '—')}</p>
+    <p><strong>Price plan:</strong> ${escapeHtml(enquiry.plan || '—')}</p>
     <p><strong>Message:</strong><br>${escapeHtml(enquiry.message || '—')}</p>
     <p><strong>Source:</strong> ${escapeHtml(enquiry.source)}</p>
   `;

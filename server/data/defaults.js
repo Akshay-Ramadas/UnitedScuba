@@ -690,6 +690,49 @@ export const defaultPosts = [
   },
 ];
 
+export const defaultDiveSites = [
+  {
+    slug: 'nemo-reef',
+    title: 'Nemo Reef',
+    excerpt: 'A shallow reef used for first dives and snorkelling.',
+    description: 'Nemo Reef is a calm, shallow site near Swaraj Dweep. It is a common first scuba dive and a clear snorkel when the sea is settled.',
+    depth: 'About 5–12 metres',
+    level: 'Beginners and snorkellers',
+    published: true,
+    sortOrder: 1,
+  },
+  {
+    slug: 'elephant-beach',
+    title: 'Elephant Beach',
+    excerpt: 'Coral and reef fish a short boat ride from Beach No. 02.',
+    description: 'Elephant Beach is a well-known reef on the north side of Swaraj Dweep. We use it for scuba and snorkelling when the conditions suit the group.',
+    depth: 'About 5–15 metres',
+    level: 'Beginners and certified divers',
+    published: true,
+    sortOrder: 2,
+  },
+  {
+    slug: 'the-wall',
+    title: 'The Wall',
+    excerpt: 'A wall dive for certified divers, planned around the day’s current.',
+    description: 'The Wall drops away from the reef. We take certified divers here when the sea and their qualification both fit the dive.',
+    depth: 'Varies with the plan for the day',
+    level: 'Certified divers',
+    published: true,
+    sortOrder: 3,
+  },
+  {
+    slug: 'lighthouse',
+    title: 'Lighthouse',
+    excerpt: 'A boat dive near the lighthouse, chosen when the sea is right.',
+    description: 'Lighthouse is a boat dive off Swaraj Dweep. The briefing on the boat covers depth, time, and the way back to the boat.',
+    depth: 'Depends on certification and conditions',
+    level: 'Certified divers',
+    published: true,
+    sortOrder: 4,
+  },
+];
+
 export const defaultGallery = [
   { url: '/frames/frame_0000.jpg', alt: 'Surface descent over Andaman water', category: 'scuba', featured: true, sortOrder: 1 },
   { url: '/frames/frame_0060.jpg', alt: 'Shallow reef and sunlight', category: 'marine', featured: true, sortOrder: 2 },
