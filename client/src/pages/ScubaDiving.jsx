@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import PageHero from '../components/PageHero.jsx';
 import FaqList from '../components/FaqList.jsx';
-import PlanYourDive from '../components/PlanYourDive.jsx';
 import { Seo } from '../lib/seo.jsx';
 import { faqJsonLd, graphJsonLd } from '../lib/siteSchema.js';
 import { useContent } from '../hooks/useContent.jsx';
@@ -32,24 +31,31 @@ function cardPrice(item) {
   return plan?.price || item.price || 'On request';
 }
 
+function activityPath(item) {
+  const base = item.type === 'snorkelling' ? '/snorkelling' : '/scuba-diving';
+  return `${base}/${item.slug}`;
+}
+
 function DiveCard({ item }) {
   const image = item.heroImage || (item.audience === 'snorkelling' ? '/frames/frame_0030.jpg' : '/frames/frame_0180.jpg');
   return (
     <article className="dive-offer">
-      <img src={image} alt="" loading="lazy" />
-      <div className="dive-offer-body">
-        {item.noSwimming && <span className="dive-tag">No swimming needed</span>}
-        <h3>{item.title}</h3>
-        <p>{item.excerpt}</p>
-        <strong>{cardPrice(item)}</strong>
-        <Link className="btn btn-primary" to={`/book-now?item=${encodeURIComponent(item.slug)}`}>Book now</Link>
-      </div>
+      <Link className="dive-offer-link" to={activityPath(item)}>
+        <img src={image} alt="" loading="lazy" />
+        <div className="dive-offer-body">
+          {item.noSwimming && <span className="dive-tag">No swimming needed</span>}
+          <h3>{item.title}</h3>
+          <p>{item.excerpt}</p>
+          <strong>{cardPrice(item)}</strong>
+        </div>
+      </Link>
+      <Link className="btn btn-primary" to={`/book-now?item=${encodeURIComponent(item.slug)}`}>Book now</Link>
     </article>
   );
 }
 
 export default function ScubaDiving() {
-  const { activities = [], diveSites = [], faqs, settings } = useContent();
+  const { activities = [], faqs, settings } = useContent();
   const copy = pageFields(settings, 'scuba');
   const grouped = GROUPS.map((group) => ({
     ...group,
@@ -79,7 +85,6 @@ export default function ScubaDiving() {
               </div>
             </div>
           ))}
-          <PlanYourDive settings={settings} diveSites={diveSites} />
           <div className="prose" style={{ marginTop: 48 }}>
             <h2>Scuba diving FAQ</h2>
             <FaqList items={faqs.filter((f) => f.page === 'scuba')} />

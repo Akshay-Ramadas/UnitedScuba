@@ -5,11 +5,12 @@ import { waLink } from '../lib/api.js';
 export default function CtaBanner({
   title = 'Tell us the dates. We will tell you the dive.',
   text = 'Courses, a first scuba dive, or a boat day from Beach No. 02.',
+  compact = false,
 }) {
   const { settings } = useContent();
   const wa = settings.whatsapp || import.meta.env.VITE_WHATSAPP_NUMBER;
   return (
-    <div className="cta-banner">
+    <div className={`cta-banner${compact ? ' compact' : ''}`}>
       <div>
         <h2>{title}</h2>
         <p>{text}</p>

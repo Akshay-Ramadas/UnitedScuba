@@ -1,17 +1,38 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { LOGO, PADI_LOGO } from '../lib/api.js';
 import { useContent } from '../hooks/useContent.jsx';
+import PlanYourDive from './PlanYourDive.jsx';
 
 const LINKS = [
   ['/', 'Home'],
   ['/about', 'About Us'],
   ['/courses', 'Courses'],
-  ['/scuba-diving', 'Scuba Diving'],
   ['/gallery', 'Gallery'],
   ['/blog', 'Blog'],
   ['/contact', 'Contact'],
 ];
+
+const DIVE_GROUPS = [
+  ['beginner', 'Beginners & Non-Swimmers'],
+  ['certified', 'Certified Divers'],
+  ['snorkelling', 'Snorkelling'],
+];
+
+function activityPath(item) {
+  const base = item.type === 'snorkelling' ? '/snorkelling' : '/scuba-diving';
+  return `${base}/${item.slug}`;
+}
+
+function diveGroups(activities) {
+  const groups = DIVE_GROUPS.map(([id, title]) => ({
+    id,
+    title,
+    items: activities.filter((item) => item.audience === id),
+  })).filter((group) => group.items.length);
+  return groups;
+}
 
 function socialHref(value) {
   const raw = String(value || '').trim();
@@ -25,6 +46,48 @@ function SocialIcon({ href, label, children }) {
     <a className="icon-btn" href={href} target="_blank" rel="noreferrer" aria-label={label}>
       {children}
     </a>
+  );
+}
+
+function ScubaMenu({ groups, pathname, onNavigate, onPlan }) {
+  const [open, setOpen] = useState(false);
+  const active = pathname.startsWith('/scuba-diving') || pathname.startsWith('/snorkelling');
+  const close = () => { setOpen(false); onNavigate?.(); };
+  return (
+    <div
+      className={`nav-drop nav-mega${open ? ' open' : ''}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <Link className={active ? 'active' : ''} to="/scuba-diving" onClick={close}>
+        Scuba Diving
+      </Link>
+      <button type="button" aria-label="Show scuba diving" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+        ▾
+      </button>
+      <div className="nav-mega-panel">
+        {groups.map((group) => (
+          <div className="nav-mega-col" key={group.id}>
+            <p>{group.title}</p>
+            {group.items.map((item) => (
+              <Link key={item.slug} to={activityPath(item)} onClick={close}>
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        ))}
+        <div className="nav-mega-col nav-mega-plan">
+          <p>Plan your dive</p>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => { setOpen(false); onPlan(); }}
+          >
+            Plan your dive
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -60,8 +123,9 @@ function DiveMenu({ sites, pathname, onNavigate }) {
 
 export default function Header() {
   const { pathname } = useLocation();
-  const { settings, diveSites = [] } = useContent();
+  const { settings, diveSites = [], activities = [] } = useContent();
   const [open, setOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const facebook = socialHref(settings.socials?.facebook);
   const instagram = socialHref(settings.socials?.instagram);
@@ -76,12 +140,26 @@ export default function Header() {
     setOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!planOpen) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') setPlanOpen(false);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [planOpen]);
+
   const classes = ['site-header'];
   if (pathname === '/') classes.push('is-home');
   if (scrolled) classes.push('scrolled');
 
-  const before = LINKS.slice(0, 4);
-  const after = LINKS.slice(4);
+  const before = LINKS.slice(0, 3);
+  const after = LINKS.slice(3);
+  const groups = diveGroups(activities);
 
   return (
     <header className={classes.join(' ')}>
@@ -96,6 +174,7 @@ export default function Header() {
               {label}
             </NavLink>
           ))}
+          <ScubaMenu groups={groups} pathname={pathname} onPlan={() => setPlanOpen(true)} />
           <DiveMenu sites={diveSites} pathname={pathname} />
           {after.map(([to, label]) => (
             <NavLink key={to} to={to}>
@@ -133,6 +212,24 @@ export default function Header() {
             {label}
           </NavLink>
         ))}
+        <NavLink to="/scuba-diving" onClick={() => setOpen(false)}>Scuba Diving</NavLink>
+        {groups.map((group) => (
+          <div key={group.id}>
+            <p className="mobile-label">{group.title}</p>
+            {group.items.map((item) => (
+              <NavLink className="mobile-sub" key={item.slug} to={activityPath(item)} onClick={() => setOpen(false)}>
+                {item.title}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+        <button
+          className="btn btn-primary mobile-plan"
+          type="button"
+          onClick={() => { setOpen(false); setPlanOpen(true); }}
+        >
+          Plan your dive
+        </button>
         <NavLink to="/dive-sites" onClick={() => setOpen(false)}>Dive sites</NavLink>
         {diveSites.map((site) => (
           <NavLink className="mobile-sub" key={site.slug} to={`/dive-sites/${site.slug}`} onClick={() => setOpen(false)}>
@@ -146,6 +243,21 @@ export default function Header() {
         ))}
         <Link className="btn btn-primary" to="/book-now" onClick={() => setOpen(false)}>Book a dive</Link>
       </div>
+      {planOpen && createPortal(
+        <div className="plan-modal" role="presentation" onClick={() => setPlanOpen(false)}>
+          <div
+            className="plan-modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Plan your dive"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button className="plan-modal-close" type="button" aria-label="Close" onClick={() => setPlanOpen(false)}>✕</button>
+            <PlanYourDive key={planOpen ? 'open' : 'closed'} settings={settings} diveSites={diveSites} />
+          </div>
+        </div>,
+        document.body,
+      )}
     </header>
   );
 }

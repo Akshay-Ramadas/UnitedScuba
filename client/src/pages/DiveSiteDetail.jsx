@@ -31,7 +31,7 @@ export default function DiveSiteDetail() {
           {site.depth && <><h2>Depth</h2><p>{site.depth}</p></>}
           {site.level && <><h2>Who it suits</h2><p>{site.level}</p></>}
           <div style={{ marginTop: 24 }}>
-            <CtaBanner title={`Book a dive at ${site.title}`} text="Tell us your dates. We confirm the site once we see the sea." />
+            <CtaBanner compact title={`Book a dive at ${site.title}`} text="Tell us your dates. We confirm the site once we see the sea." />
           </div>
         </div>
       </section>

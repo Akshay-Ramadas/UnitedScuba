@@ -18,6 +18,15 @@ export default function ActivityDetail() {
   const shots = gallery.filter((g) => g.category === item.type).slice(0, 6);
   const text = (value) => (typeof value === 'string' ? value.trim() : '');
   const list = (value) => (Array.isArray(value) ? value.filter(Boolean) : []);
+  const planPrice = (item.plans || []).find((plan) => plan.price)?.price;
+  const facts = [
+    ['Prerequisites', item.prerequisites],
+    ['Max depth', item.depth],
+    ['Photos & videos', item.photos],
+    ['Duration', item.duration],
+    ['Min age', item.minAge],
+    ['Price', planPrice || item.price],
+  ].filter(([, value]) => text(value));
 
   return (
     <>
@@ -31,9 +40,18 @@ export default function ActivityDetail() {
       <PageHero kicker={kicker} title={item.title} intro={item.overview || item.excerpt} image={item.heroImage} />
       <section className="section">
         <div className="container prose">
+          {facts.length > 0 && (
+            <div className="fact-bar" aria-label="Activity details">
+              {facts.map(([label, value]) => (
+                <div key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          )}
           {text(item.whoCanParticipate) && <><h2>Who can participate</h2><p>{item.whoCanParticipate}</p></>}
           {text(item.details) && <><h2>Experience details</h2><p>{item.details}</p></>}
-          {text(item.duration) && <><h2>Duration</h2><p>{item.duration}</p></>}
           {(item.plans || []).length > 0 ? (
             <div className="plan-wrap">
               <h2>Price plans</h2>
@@ -59,10 +77,8 @@ export default function ActivityDetail() {
                 ))}
               </div>
             </div>
-          ) : (
-            text(item.price) && <><h2>Price</h2><p>{item.price}</p></>
-          )}
-          <CtaBanner title={`Book ${item.title}`} text="Tell us your dates. We confirm this dive from Beach No. 02." />
+          ) : null}
+          <CtaBanner compact title={`Book ${item.title}`} text="Tell us your dates. We confirm this dive from Beach No. 02." />
           {list(item.included).length > 0 && <><h2>What is included</h2><ul className="list">{list(item.included).map((i) => <li key={i}>{i}</li>)}</ul></>}
           {list(item.notIncluded).length > 0 && <><h2>What is not included</h2><ul className="list">{list(item.notIncluded).map((i) => <li key={i}>{i}</li>)}</ul></>}
           {text(item.equipment) && <><h2>Equipment</h2><p>{item.equipment}</p></>}

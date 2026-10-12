@@ -56,7 +56,8 @@ const EMPTY_PLAN = { name: '', price: '', logo: '', highlights: '', featured: fa
 const EMPTY = {
   title: '', type: 'scuba', excerpt: '', heroImage: '',
   overview: '', whoCanParticipate: '',
-  duration: '', price: 'On request', meetingPoint: '',
+  duration: '', depth: '', minAge: '', photos: '', prerequisites: '',
+  price: 'On request', meetingPoint: '',
   audience: '', noSwimming: false,
   requirements: '', whatToBring: '',
   included: '', notIncluded: '', faqs: '',
@@ -387,11 +388,23 @@ export default function ActivitiesAdmin() {
 
           <Section title="Schedule & logistics">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-              <Field label="Duration">
-                <Input value={form.duration} onChange={e => set('duration', e.target.value)} placeholder="e.g. Half day (4 hrs)" />
+              <Field label="Duration" hint="fact bar">
+                <Input value={form.duration} onChange={e => set('duration', e.target.value)} placeholder="e.g. 2–3 hours" />
+              </Field>
+              <Field label="Max depth" hint="fact bar">
+                <Input value={form.depth || ''} onChange={e => set('depth', e.target.value)} placeholder="e.g. Up to 12 m" />
+              </Field>
+              <Field label="Min age" hint="fact bar">
+                <Input value={form.minAge || ''} onChange={e => set('minAge', e.target.value)} placeholder="e.g. 10 & above" />
+              </Field>
+              <Field label="Photos & videos" hint="fact bar">
+                <Input value={form.photos || ''} onChange={e => set('photos', e.target.value)} placeholder="e.g. Complimentary" />
+              </Field>
+              <Field label="Prerequisites" hint="short line on the fact bar">
+                <Input value={form.prerequisites || ''} onChange={e => set('prerequisites', e.target.value)} placeholder="e.g. None" />
               </Field>
               <Field label="Meeting point">
-                <Input value={form.meetingPoint} onChange={e => set('meetingPoint', e.target.value)} placeholder="e.g. Corbyn's Cove Beach, 7 AM" />
+                <Input value={form.meetingPoint} onChange={e => set('meetingPoint', e.target.value)} placeholder="e.g. Beach No. 02, 7 AM" />
               </Field>
             </div>
             <Field label="Requirements" hint="health, fitness, swimming">
