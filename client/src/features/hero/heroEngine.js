@@ -1,5 +1,4 @@
 const TOTAL_FRAMES = 300;
-const TOTAL_SCENES = 5;
 const FRAME_LOADS = 4;
 
 function frameSrc(index) {
@@ -156,7 +155,7 @@ export function playFrameVideo(canvas) {
   };
 }
 
-export function initHero(root) {
+export function initHero(root, onScene) {
   const canvas = root.querySelector('#video-canvas');
   const ctx = canvas.getContext('2d', { alpha: false });
   const heroSection = root.querySelector('#hero');
@@ -191,6 +190,7 @@ export function initHero(root) {
   let subOsc = null;
   let subGain = null;
   let isAudioPlaying = false;
+  let lastScene = -1;
 
   frames.setOnReady(() => {
     if (!destroyed && !isAppStarted && frames.ready(0)) startApp();
@@ -251,8 +251,13 @@ export function initHero(root) {
       drawFrameToCanvas(frames.images[show]);
       drawnFrame = show;
     }
-    let activeSceneIndex = Math.min(TOTAL_SCENES - 1, Math.floor(currentProgress * TOTAL_SCENES));
-    if (currentProgress >= 1) activeSceneIndex = TOTAL_SCENES - 1;
+    const totalScenes = Math.max(1, sceneNodes.length);
+    let activeSceneIndex = Math.min(totalScenes - 1, Math.floor(currentProgress * totalScenes));
+    if (currentProgress >= 1) activeSceneIndex = totalScenes - 1;
+    if (activeSceneIndex !== lastScene) {
+      lastScene = activeSceneIndex;
+      onScene?.(activeSceneIndex);
+    }
     updateHUD(currentProgress, activeSceneIndex);
     rafId = requestAnimationFrame(renderLoop);
   }
@@ -303,7 +308,8 @@ export function initHero(root) {
   sceneNodes.forEach((node) => {
     node.addEventListener('click', () => {
       const sceneIdx = Number(node.getAttribute('data-jump'));
-      const targetProg = sceneIdx / (TOTAL_SCENES - 1);
+      const totalScenes = Math.max(1, sceneNodes.length);
+      const targetProg = Math.min((sceneIdx + 0.02) / totalScenes, 0.98);
       const scrollDistance = heroSection.offsetHeight - window.innerHeight;
       window.scrollTo({
         top: heroSection.offsetTop + targetProg * scrollDistance,

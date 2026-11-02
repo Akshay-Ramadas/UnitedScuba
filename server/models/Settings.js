@@ -17,6 +17,7 @@ const settingsSchema = new mongoose.Schema(
       instagram: { type: String, default: '' },
       youtube: { type: String, default: '' },
       twitter: { type: String, default: '' },
+      linkedin: { type: String, default: '' },
     },
     about: { type: String, default: '' },
     story: { type: String, default: '' },

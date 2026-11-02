@@ -1,5 +1,24 @@
 export const PAGE_CONTENT = [
   {
+    id: 'hero',
+    title: 'Hero',
+    hint: 'Phone screen, then the three desktop scroll chapters. Label 24, heading 40, description 140 characters.',
+    fields: [
+      { name: 'phoneKicker', label: 'Phone label', max: 24, default: 'UNITED SCUBA' },
+      { name: 'phoneTitle', label: 'Phone heading', max: 40, default: 'See Andaman from underwater.' },
+      { name: 'phoneLead', label: 'Phone description', type: 'textarea', max: 140, default: 'Try scuba, snorkel a reef, or begin a PADI course from Beach No. 02. We explain it first, stay with you, and choose calm water for the day.' },
+      { name: 'beginnersKicker', label: 'Beginners label', max: 24, default: 'First time' },
+      { name: 'beginnersTitle', label: 'Beginners heading', max: 40, default: 'Shallow water, with a guide beside you.' },
+      { name: 'beginnersLead', label: 'Beginners description', type: 'textarea', max: 140, default: 'No experience needed. You learn how to breathe underwater, then dive on a reef where we can stay close the whole way.' },
+      { name: 'certifiedKicker', label: 'Certified label', max: 24, default: 'Certified divers' },
+      { name: 'certifiedTitle', label: 'Certified heading', max: 40, default: 'Fun dives that match your certificate.' },
+      { name: 'certifiedLead', label: 'Certified description', type: 'textarea', max: 140, default: 'For Open Water and above. We check the sea and your group, then take you to a reef that fits the level you already hold.' },
+      { name: 'advancedKicker', label: 'Advanced label', max: 24, default: 'Experienced divers' },
+      { name: 'advancedTitle', label: 'Advanced heading', max: 40, default: 'Deeper reefs, planned for your level.' },
+      { name: 'advancedLead', label: 'Advanced description', type: 'textarea', max: 140, default: 'For advanced divers. We brief you on the boat and choose a dive that matches the qualification on your card.' },
+    ],
+  },
+  {
     id: 'home',
     title: 'Home',
     hint: 'Headings and text on the home page',
@@ -197,14 +216,30 @@ function legacyValue(settings, key) {
   return value == null ? '' : String(value);
 }
 
+function limited(field, value) {
+  const text = String(value ?? '');
+  if (!field.max) return text;
+  return text.slice(0, field.max);
+}
+
 export function fieldValue(settings, pageId, field) {
   const saved = settings?.pages?.[pageId]?.[field.name];
-  if (saved != null && String(saved).trim() !== '') return String(saved);
+  if (saved != null && String(saved).trim() !== '') return limited(field, saved);
   if (field.legacy) {
     const legacy = legacyValue(settings, field.legacy);
-    if (legacy.trim()) return legacy;
+    if (legacy.trim()) return limited(field, legacy);
   }
-  return field.default || '';
+  return limited(field, field.default || '');
+}
+
+export function clampPageValues(pageId, values) {
+  const page = PAGE_CONTENT.find((entry) => entry.id === pageId);
+  const next = { ...(values || {}) };
+  if (!page) return next;
+  for (const field of page.fields) {
+    if (field.max && next[field.name] != null) next[field.name] = String(next[field.name]).slice(0, field.max);
+  }
+  return next;
 }
 
 export function pageFields(settings, pageId) {

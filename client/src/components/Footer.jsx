@@ -27,14 +27,14 @@ export default function Footer() {
                 <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
               </svg>
             </SocialLink>
+            <SocialLink href={settings.socials?.facebook} label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
+              </svg>
+            </SocialLink>
             <SocialLink href={settings.socials?.youtube} label="YouTube">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M23 12.2s0-3.2-.4-4.6c-.2-.9-.9-1.6-1.8-1.8C19.2 5.4 12 5.4 12 5.4s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 9 1 12.2 1 12.2s0 3.2.4 4.6c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.4.4-4.6.4-4.6zM9.8 15.5v-6.6l6.2 3.3-6.2 3.3z" />
-              </svg>
-            </SocialLink>
-            <SocialLink href={settings.socials?.twitter} label="Twitter">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.727-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </SocialLink>
             <SocialLink href={wa ? waLink(wa) : ''} label="WhatsApp">

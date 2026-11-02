@@ -20,7 +20,7 @@ const activitySchema = new mongoose.Schema(
   {
     slug: { type: String, required: true, unique: true, index: true },
     type: { type: String, required: true, trim: true, maxlength: 40 },
-    audience: { type: String, enum: ['beginner', 'certified', 'snorkelling', ''], default: '' },
+    audience: { type: String, default: '', trim: true, maxlength: 60 },
     noSwimming: { type: Boolean, default: false },
     title: { type: String, required: true },
     excerpt: { type: String, default: '' },

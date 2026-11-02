@@ -49,7 +49,7 @@
   transition: width 0.3s ease;
 }
 
-.hero-scroll-container { height: 600vh; position: relative; }
+.hero-scroll-container { height: 400vh; position: relative; }
 .hero-sticky-viewport {
   position: sticky;
   top: 0;

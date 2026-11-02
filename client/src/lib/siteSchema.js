@@ -17,7 +17,7 @@ export function absoluteUrl(site, value) {
 
 function sameAs(settings) {
   const socials = settings?.socials || {};
-  return [socials.instagram, socials.youtube, socials.twitter, socials.facebook, settings?.googleMapsReviewUrl, settings?.mapsUrl]
+  return [socials.instagram, socials.facebook, socials.youtube, socials.linkedin, settings?.googleMapsReviewUrl, settings?.mapsUrl]
     .map((value) => String(value || '').trim())
     .filter(Boolean);
 }

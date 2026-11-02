@@ -26,7 +26,15 @@ function activityPath(item) {
 }
 
 function diveGroups(activities) {
-  const groups = DIVE_GROUPS.map(([id, title]) => ({
+  const known = new Set(DIVE_GROUPS.map(([id]) => id));
+  const extras = [];
+  for (const item of activities) {
+    const name = String(item.audience || '').trim();
+    if (!name || known.has(name)) continue;
+    if (!extras.some((entry) => entry.toLowerCase() === name.toLowerCase())) extras.push(name);
+  }
+  extras.sort((a, b) => a.localeCompare(b));
+  const groups = [...DIVE_GROUPS, ...extras.map((name) => [name, name])].map(([id, title]) => ({
     id,
     title,
     items: activities.filter((item) => item.audience === id),
@@ -183,16 +191,16 @@ export default function Header() {
           ))}
         </nav>
         <div className="header-end">
-          <SocialIcon href={facebook} label="Facebook">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
-            </svg>
-          </SocialIcon>
           <SocialIcon href={instagram} label="Instagram">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
               <rect x="3" y="3" width="18" height="18" rx="5" />
               <circle cx="12" cy="12" r="4" />
               <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+            </svg>
+          </SocialIcon>
+          <SocialIcon href={facebook} label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
             </svg>
           </SocialIcon>
           <Link className="btn btn-primary header-cta" to="/book-now">Book a dive</Link>

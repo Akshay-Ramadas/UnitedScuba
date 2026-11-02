@@ -1254,8 +1254,8 @@ input, select, textarea { font-size: max(16px, 0.9rem); }
   .why-card    { padding: 1.25rem; }
   /* Review */
   .review-card { padding: 1.4rem; }
-  /* Course */
-  .course-img-wrap img { height: 160px; }
+  /* Course photo. The PADI mark is a nested image and keeps its own size. */
+  .course-img-wrap > img { height: 160px; }
   /* Form */
   .form input, .form select, .form textarea { padding: 0.9rem; }
   /* CTA */

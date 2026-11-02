@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { AlertCircle, CheckCircle2, ChevronRight, Settings } from '../components/ui/icons.jsx';
 import { Spinner } from '../components/ui/spinner.jsx';
-import { PAGE_CONTENT, fieldValue, lines } from '../content/pageCopy.js';
+import { PAGE_CONTENT, clampPageValues, fieldValue, lines } from '../content/pageCopy.js';
 import ImageField from './ImageField.jsx';
 
 function Field({ label, hint, children }) {
@@ -66,10 +66,10 @@ const SECTIONS = [
     hint: 'Footer icons and Google Analytics. WhatsApp uses the General number.',
     fields: [
       { name: 'ga4Id', label: 'GA4 Measurement ID', hint: 'e.g. G-XXXXXXXXXX' },
-      { name: 'socials.facebook', label: 'Facebook URL' },
       { name: 'socials.instagram', label: 'Instagram URL' },
+      { name: 'socials.facebook', label: 'Facebook URL' },
       { name: 'socials.youtube', label: 'YouTube URL' },
-      { name: 'socials.twitter', label: 'Twitter / X URL' },
+      { name: 'socials.linkedin', label: 'LinkedIn URL' },
     ],
   },
   {
@@ -133,11 +133,14 @@ export default function SettingsAdmin() {
   }
 
   function setPageField(name, value, bucket = pageId) {
+    const spec = PAGE_CONTENT.find((entry) => entry.id === bucket);
+    const max = spec?.fields.find((field) => field.name === name)?.max;
+    const next = max ? String(value).slice(0, max) : value;
     setForm((current) => ({
       ...current,
       pages: {
         ...(current.pages || {}),
-        [bucket]: { ...(current.pages?.[bucket] || {}), [name]: value },
+        [bucket]: { ...(current.pages?.[bucket] || {}), [name]: next },
       },
     }));
   }
@@ -150,7 +153,7 @@ export default function SettingsAdmin() {
     try {
       const body = {};
       if (page) {
-        const values = form.pages?.[page.id] || {};
+        const values = clampPageValues(page.id, form.pages?.[page.id] || {});
         body.pages = { ...(form.pages || {}), [page.id]: values };
         if (page.id === 'home') {
           body.about = values.centreText || '';
@@ -169,7 +172,7 @@ export default function SettingsAdmin() {
           body.equipment = values.equipmentText || '';
           body.pages = {
             ...(body.pages || {}),
-            snorkelling: form.pages?.snorkelling || {},
+            snorkelling: clampPageValues('snorkelling', form.pages?.snorkelling || {}),
           };
         }
         if (page.id === 'privacy' || page.id === 'terms' || page.id === 'cancellation') {
@@ -315,13 +318,16 @@ export default function SettingsAdmin() {
         <Card>
           <CardContent style={{ paddingTop: '1.25rem' }}>
             <form id="settings-form" onSubmit={save} className="sh-form" style={{ gap: '1rem' }}>
-              {page.fields.map((field) => (
-                <Field key={field.name} label={field.label}>
-                  {field.type === 'textarea'
-                    ? <Textarea rows={6} value={form.pages?.[page.id]?.[field.name] ?? ''} onChange={(event) => setPageField(field.name, event.target.value)} />
-                    : <Input value={form.pages?.[page.id]?.[field.name] ?? ''} onChange={(event) => setPageField(field.name, event.target.value)} />}
-                </Field>
-              ))}
+              {page.fields.map((field) => {
+                const value = form.pages?.[page.id]?.[field.name] ?? '';
+                return (
+                  <Field key={field.name} label={field.label} hint={field.max ? `${String(value).length} / ${field.max}` : undefined}>
+                    {field.type === 'textarea'
+                      ? <Textarea rows={field.max && field.max <= 200 ? 3 : 6} maxLength={field.max || undefined} value={value} onChange={(event) => setPageField(field.name, event.target.value)} />
+                      : <Input maxLength={field.max || undefined} value={value} onChange={(event) => setPageField(field.name, event.target.value)} />}
+                  </Field>
+                );
+              })}
               {page.id === 'scuba' && PAGE_CONTENT.find((entry) => entry.id === 'snorkelling') && (
                 <>
                   <h2 style={{ margin: '0.5rem 0 0', fontSize: '1.05rem' }}>Snorkelling</h2>

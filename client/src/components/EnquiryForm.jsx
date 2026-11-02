@@ -8,7 +8,7 @@ const EMPTY = {
   name: '', phone: '', email: '',
   preferredDate: '', numberOfPeople: 1,
   activityType: 'scuba', diverLevel: 'beginner',
-  preferredItem: '', plan: '', message: '',
+  preferredItem: '', plan: '', diveSites: '', message: '',
   website: '', whatsappOptIn: true,
 };
 
@@ -26,7 +26,7 @@ const LEVELS = [
 ];
 
 export default function EnquiryForm({ source = 'book-now' }) {
-  const { settings, courses, activities } = useContent();
+  const { settings, courses, activities, diveSites = [] } = useContent();
   const [params] = useSearchParams();
   const [form,   setForm]   = useState(EMPTY);
   const [status, setStatus] = useState('idle'); // idle | saving | done
@@ -46,32 +46,36 @@ export default function EnquiryForm({ source = 'book-now' }) {
   useEffect(() => {
     if (appliedLink.current || isContact) return;
     const slug = params.get('item');
-    if (!slug) {
+    const siteSlug = params.get('site');
+    if (!slug && !siteSlug) {
       appliedLink.current = true;
       return;
     }
-    if (!activities.length && !courses.length) return;
+    if (slug && !activities.length && !courses.length) return;
+    if (siteSlug && !diveSites.length) return;
     appliedLink.current = true;
-    const activity = activities.find((item) => item.slug === slug);
-    const course = courses.find((item) => item.slug === slug);
+    const activity = slug ? activities.find((item) => item.slug === slug) : null;
+    const course = slug ? courses.find((item) => item.slug === slug) : null;
     const picked = activity || course;
-    if (!picked) return;
+    const site = siteSlug ? diveSites.find((item) => item.slug === siteSlug) : null;
+    if (!picked && !site) return;
     const planName = params.get('plan') || '';
-    const chosen = (picked.plans || []).find((plan) => plan.name === planName);
+    const chosen = (picked?.plans || []).find((plan) => plan.name === planName);
     const activityType = course && !activity
       ? 'course'
       : activity?.type === 'snorkelling'
         ? 'snorkelling'
-        : activity?.type === 'scuba'
+        : activity?.type === 'scuba' || site
           ? 'scuba'
           : 'general';
     setForm((current) => ({
       ...current,
       activityType,
-      preferredItem: picked.title,
+      preferredItem: picked?.title || current.preferredItem,
       plan: chosen?.name || '',
+      diveSites: site?.title || current.diveSites,
     }));
-  }, [activities, courses, isContact, params]);
+  }, [activities, courses, diveSites, isContact, params]);
 
   const selectedOffer = activities.find((item) => item.title === form.preferredItem)
     || courses.find((item) => item.title === form.preferredItem);
@@ -241,6 +245,18 @@ export default function EnquiryForm({ source = 'book-now' }) {
                     <option value="">Select a course or trip…</option>
                     {options.map((o) => (
                       <option key={o.value} value={o.value}>{o.group}: {o.value}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {diveSites.length > 0 && (
+                <div className="enq-field" style={{ marginBottom: '0.875rem' }}>
+                  <label className="enq-label" htmlFor="enq-site">Dive site</label>
+                  <select id="enq-site" className="enq-select" name="diveSites" value={form.diveSites} onChange={set}>
+                    <option value="">We'll match the sea</option>
+                    {diveSites.map((site) => (
+                      <option key={site.slug} value={site.title}>{site.title}</option>
                     ))}
                   </select>
                 </div>

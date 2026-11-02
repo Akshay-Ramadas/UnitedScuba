@@ -57,7 +57,15 @@ function DiveCard({ item }) {
 export default function ScubaDiving() {
   const { activities = [], faqs, settings } = useContent();
   const copy = pageFields(settings, 'scuba');
-  const grouped = GROUPS.map((group) => ({
+  const known = new Set(GROUPS.map((group) => group.id));
+  const extras = [];
+  for (const item of activities) {
+    const name = String(item.audience || '').trim();
+    if (!name || known.has(name)) continue;
+    if (!extras.some((entry) => entry.toLowerCase() === name.toLowerCase())) extras.push(name);
+  }
+  extras.sort((a, b) => a.localeCompare(b));
+  const grouped = [...GROUPS, ...extras.map((name) => ({ id: name, title: name, lead: '' }))].map((group) => ({
     ...group,
     items: activities
       .filter((item) => item.audience === group.id)
@@ -78,7 +86,7 @@ export default function ScubaDiving() {
           {grouped.map((group) => (
             <div className="dive-group" key={group.id}>
               <h2>{group.title}</h2>
-              <p className="dive-group-lead">{group.lead}</p>
+              {group.lead && <p className="dive-group-lead">{group.lead}</p>}
               {group.note && <p className="dive-group-note">{group.note}</p>}
               <div className="dive-offer-grid">
                 {group.items.map((item) => <DiveCard item={item} key={item.slug} />)}

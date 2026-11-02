@@ -9,7 +9,7 @@ export const defaultSettings = {
   mapsUrl: 'https://maps.google.com/maps?q=Sands+Marina+Resort+Havelock+Island+Andaman',
   mapsEmbed: '',
   hours: 'Open daily 7:00 AM – 6:00 PM',
-  socials: { facebook: '', instagram: '', youtube: '', twitter: '' },
+  socials: { facebook: '', instagram: '', youtube: '', twitter: '', linkedin: '' },
   about:
     'United Scuba Dive Centre, established in 2018, is a professional scuba diving centre in Swaraj Dweep (Havelock Island), Andaman & Nicobar Islands. We offer safe and memorable diving experiences for beginners and certified divers, helping guests discover the vibrant coral reefs and marine life of the Andaman Sea.',
   story:

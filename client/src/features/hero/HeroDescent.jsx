@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { initHero, isMobileHero, playFrameVideo } from './heroEngine.js';
 import { useScrollReveal, useCounter } from '../../hooks/useScrollReveal.jsx';
+import { useContent } from '../../hooks/useContent.jsx';
+import { pageFields } from '../../content/pageCopy.js';
 import './hero.css';
 
 const HERO_STATS = [
@@ -29,35 +31,20 @@ function HeroStats() {
   );
 }
 
-const SCENES = [
-  {
-    kicker: 'Swaraj Dweep',
-    title: 'Scuba diving in Andaman, made clear.',
-    lead: 'A first dive, a snorkel, or a PADI course from Beach No. 02. We explain everything first, stay with you, and pick a calm site for the day.',
-  },
-  {
-    kicker: 'First time',
-    title: 'Shallow water, with a guide beside you.',
-    lead: 'No experience needed. You learn how to breathe underwater, then dive on a reef where we can stay close the whole way.',
-  },
-  {
-    kicker: 'Certified divers',
-    title: 'Fun dives that match your certificate.',
-    lead: 'For Open Water and above. We check the sea and your group, then take you to a reef that fits the level you already hold.',
-  },
-  {
-    kicker: 'Experienced divers',
-    title: 'Deeper reefs, planned for your level.',
-    lead: 'For advanced divers. We brief you on the boat and choose a dive that matches the qualification on your card.',
-  },
-  {
-    kicker: 'United Scuba',
-    title: 'Tell us your dates. We plan the dive.',
-    lead: 'We are at Sands Marina Resort, Beach No. 02, Swaraj Dweep. Message us for a first dive, a course, or a day on the boat.',
-  },
+const CHAPTERS = [
+  { id: 'beginners', label: 'Beginners' },
+  { id: 'certified', label: 'Certified' },
+  { id: 'advanced', label: 'Advanced' },
 ];
 
-const CHAPTERS = ['Start', 'Beginners', 'Certified', 'Advanced', 'Book'];
+function heroScenes(copy) {
+  return CHAPTERS.map((chapter) => ({
+    id: chapter.id,
+    kicker: copy[`${chapter.id}Kicker`],
+    title: copy[`${chapter.id}Title`],
+    lead: copy[`${chapter.id}Lead`],
+  }));
+}
 
 function HeroActions() {
   return (
@@ -68,15 +55,8 @@ function HeroActions() {
   );
 }
 
-const MOBILE_SCENE = {
-  kicker: 'UNITED SCUBA',
-  title: 'See Andaman from underwater.',
-  lead: 'Try scuba, snorkel a reef, or begin a PADI course from Beach No. 02. We explain it first, stay with you, and choose calm water for the day.',
-};
-
-function MobileHero() {
+function MobileHero({ scene }) {
   const canvasRef = useRef(null);
-  const scene = MOBILE_SCENE;
 
   useEffect(() => playFrameVideo(canvasRef.current), []);
 
@@ -94,7 +74,16 @@ function MobileHero() {
 }
 
 export default function HeroDescent() {
+  const { settings } = useContent();
+  const copy = pageFields(settings, 'hero');
+  const scenes = heroScenes(copy);
+  const mobileScene = {
+    kicker: copy.phoneKicker,
+    title: copy.phoneTitle,
+    lead: copy.phoneLead,
+  };
   const rootRef = useRef(null);
+  const [active, setActive] = useState(0);
   const [mobile, setMobile] = useState(() => (typeof window !== 'undefined' ? isMobileHero() : true));
 
   useEffect(() => {
@@ -106,10 +95,10 @@ export default function HeroDescent() {
 
   useEffect(() => {
     if (mobile || !rootRef.current) return undefined;
-    return initHero(rootRef.current);
+    return initHero(rootRef.current, setActive);
   }, [mobile]);
 
-  if (mobile) return <MobileHero />;
+  if (mobile) return <MobileHero scene={mobileScene} />;
 
   return (
     <div className="hero-root" ref={rootRef}>
@@ -121,8 +110,8 @@ export default function HeroDescent() {
 
           <div className="hero-panel">
             <div className="hero-scenes">
-              {SCENES.map((scene, idx) => (
-                <article className={`scene-card${idx === 0 ? ' active' : ''}`} data-scene={idx} key={scene.title}>
+              {scenes.map((scene, idx) => (
+                <article className={`scene-card${idx === active ? ' active' : ''}`} data-scene={idx} key={scene.id}>
                   <p className="hero-kicker">{scene.kicker}</p>
                   <h1 className="scene-title">{scene.title}</h1>
                   <p className="hero-lead">{scene.lead}</p>
@@ -133,10 +122,10 @@ export default function HeroDescent() {
           </div>
 
           <nav className="hero-chapters" aria-label="Descent">
-            {CHAPTERS.map((label, n) => (
-              <button className={`scene-node${n === 0 ? ' active' : ''}`} data-jump={n} type="button" key={label}>
+            {CHAPTERS.map((chapter, n) => (
+              <button className={`scene-node${n === active ? ' active' : ''}`} data-jump={n} type="button" key={chapter.id}>
                 <span className="node-index">{String(n + 1).padStart(2, '0')}</span>
-                <span className="node-label">{label}</span>
+                <span className="node-label">{chapter.label}</span>
               </button>
             ))}
           </nav>

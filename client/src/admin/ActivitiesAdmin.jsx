@@ -51,6 +51,28 @@ function extraTypes(activities) {
   return names.sort((a, b) => a.localeCompare(b));
 }
 
+const KNOWN_AUDIENCES = ['', 'beginner', 'certified', 'snorkelling'];
+
+function cleanAudience(value) {
+  const name = String(value || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  const key = name.toLowerCase();
+  if (!key || key === 'not grouped' || key === 'none') return '';
+  if (key === 'beginner' || key === 'beginners' || key === 'beginners and non-swimmers' || key === 'beginners & non-swimmers') return 'beginner';
+  if (key === 'certified' || key === 'certified divers') return 'certified';
+  if (key === 'snorkelling' || key === 'snorkeling' || key === 'snorkel') return 'snorkelling';
+  return name;
+}
+
+function extraAudiences(activities) {
+  const names = [];
+  for (const item of activities) {
+    const name = String(item.audience || '').trim();
+    if (!name || KNOWN_AUDIENCES.includes(name)) continue;
+    if (!names.some((entry) => entry.toLowerCase() === name.toLowerCase())) names.push(name);
+  }
+  return names.sort((a, b) => a.localeCompare(b));
+}
+
 const EMPTY_PLAN = { name: '', price: '', logo: '', highlights: '', featured: false };
 
 const EMPTY = {
@@ -209,6 +231,8 @@ export default function ActivitiesAdmin() {
   const [deleteId,   setDeleteId]   = useState(null);
   const [useCustom,  setUseCustom]  = useState(false);
   const [customName, setCustomName] = useState('');
+  const [useCustomAudience, setUseCustomAudience] = useState(false);
+  const [customAudience, setCustomAudience] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -233,6 +257,8 @@ export default function ActivitiesAdmin() {
     const known = !item || next.type === 'scuba' || next.type === 'snorkelling' || extraTypes(activities).some((name) => name.toLowerCase() === String(next.type).toLowerCase());
     setUseCustom(!known);
     setCustomName(known ? '' : next.type);
+    setUseCustomAudience(false);
+    setCustomAudience('');
     setForm(next);
     setError('');
   }
@@ -240,13 +266,18 @@ export default function ActivitiesAdmin() {
   async function save(e) {
     e.preventDefault();
     const type = cleanType(useCustom ? customName : form.type);
+    const audience = cleanAudience(useCustomAudience ? customAudience : form.audience);
     if (!type) {
       setError('Enter a name for the custom activity type.');
       return;
     }
+    if (useCustomAudience && !audience) {
+      setError('Enter a name for the custom group.');
+      return;
+    }
     setSaving(true); setError('');
     try {
-      const body = toBody({ ...form, type });
+      const body = toBody({ ...form, type, audience });
       const saved = form._id
         ? await api(`/api/admin/activities/${form._id}`, { method: 'PUT',  token, body })
         : await api('/api/admin/activities',              { method: 'POST', token, body });
@@ -254,6 +285,8 @@ export default function ActivitiesAdmin() {
       setForm(null);
       setUseCustom(false);
       setCustomName('');
+      setUseCustomAudience(false);
+      setCustomAudience('');
     } catch (e) { setError(e.message); }
     finally { setSaving(false); }
   }
@@ -277,7 +310,7 @@ export default function ActivitiesAdmin() {
         <div className="sh-page-header">
           <div>
             <p style={{ fontSize: '0.78rem', color: 'hsl(215.4 16.3% 46.9%)', marginBottom: '0.25rem', cursor: 'pointer' }}
-              onClick={() => { setForm(null); setUseCustom(false); setCustomName(''); }}>← Back to activities</p>
+              onClick={() => { setForm(null); setUseCustom(false); setCustomName(''); setUseCustomAudience(false); setCustomAudience(''); }}>← Back to activities</p>
             <h1 className="sh-page-title">{form._id ? `Edit: ${form.title || 'Activity'}` : 'Add new activity'}</h1>
             {previewSlug && (
               <p style={{ fontSize: '0.78rem', color: 'hsl(215.4 16.3% 46.9%)', marginTop: '0.2rem' }}>
@@ -286,7 +319,7 @@ export default function ActivitiesAdmin() {
             )}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <Button variant="outline" onClick={() => { setForm(null); setUseCustom(false); setCustomName(''); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setForm(null); setUseCustom(false); setCustomName(''); setUseCustomAudience(false); setCustomAudience(''); }}>Cancel</Button>
             <Button type="submit" form="act-form" disabled={saving}>{saving ? 'Saving…' : form._id ? 'Save changes' : 'Create activity'}</Button>
           </div>
         </div>
@@ -332,12 +365,37 @@ export default function ActivitiesAdmin() {
                 )}
               </Field>
               <Field label="Who it is for" hint="where it appears on the scuba page">
-                <select className="sh-select" value={form.audience || ''} onChange={(e) => set('audience', e.target.value)}>
+                <select
+                  className="sh-select"
+                  value={useCustomAudience ? CUSTOM : (form.audience || '')}
+                  onChange={(e) => {
+                    if (e.target.value === CUSTOM) {
+                      setUseCustomAudience(true);
+                      return;
+                    }
+                    setUseCustomAudience(false);
+                    setCustomAudience('');
+                    set('audience', e.target.value);
+                  }}
+                >
                   <option value="">Not grouped</option>
                   <option value="beginner">Beginners and non-swimmers</option>
                   <option value="certified">Certified divers</option>
                   <option value="snorkelling">Snorkelling</option>
+                  {extraAudiences(activities).map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                  <option value={CUSTOM}>Custom group</option>
                 </select>
+                {useCustomAudience && (
+                  <Input
+                    value={customAudience}
+                    onChange={(e) => setCustomAudience(e.target.value)}
+                    placeholder="New group name, e.g. Advanced divers"
+                    style={{ marginTop: '0.5rem' }}
+                    required
+                  />
+                )}
               </Field>
               <Field label="Starting price" hint="shown on the scuba page card">
                 <Input value={form.price} onChange={e => set('price', e.target.value)} placeholder="e.g. From INR 6,000" />
