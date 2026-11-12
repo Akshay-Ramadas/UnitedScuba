@@ -321,7 +321,7 @@ export default function SettingsAdmin() {
               {page.fields.map((field) => {
                 const value = form.pages?.[page.id]?.[field.name] ?? '';
                 return (
-                  <Field key={field.name} label={field.label} hint={field.max ? `${String(value).length} / ${field.max}` : undefined}>
+                  <Field key={field.name} label={field.label} hint={field.max ? `${String(value).length} / ${field.max}` : field.hint}>
                     {field.type === 'textarea'
                       ? <Textarea rows={field.max && field.max <= 200 ? 3 : 6} maxLength={field.max || undefined} value={value} onChange={(event) => setPageField(field.name, event.target.value)} />
                       : <Input maxLength={field.max || undefined} value={value} onChange={(event) => setPageField(field.name, event.target.value)} />}

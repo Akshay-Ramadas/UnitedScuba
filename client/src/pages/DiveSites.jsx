@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom';
 import PageHero from '../components/PageHero.jsx';
 import { Seo } from '../lib/seo.jsx';
 import { useContent } from '../hooks/useContent.jsx';
+import { pageFields } from '../content/pageCopy.js';
 
 export default function DiveSites() {
-  const { diveSites = [] } = useContent();
+  const { diveSites = [], settings } = useContent();
+  const copy = pageFields(settings, 'dive-sites');
   return (
     <>
       <Seo
@@ -13,9 +15,9 @@ export default function DiveSites() {
         path="/dive-sites"
       />
       <PageHero
-        kicker="Swaraj Dweep"
-        title="Dive sites"
-        intro="The reefs we use from Beach No. 02. The site for the day depends on the sea and who is diving."
+        kicker={copy.kicker}
+        title={copy.title}
+        intro={copy.intro}
       />
       <section className="section section-dark">
         <div className="container">
@@ -29,7 +31,7 @@ export default function DiveSites() {
                   <h3>{site.title}</h3>
                   <p>{site.excerpt}</p>
                   {site.level && <span className="course-price">{site.level}</span>}
-                  <span className="course-cta">Site details →</span>
+                  <span className="course-cta">{copy.cardCta}</span>
                 </div>
               </Link>
             ))}

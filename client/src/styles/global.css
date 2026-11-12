@@ -272,6 +272,14 @@ input, select, textarea { font-size: max(16px, 0.9rem); }
   cursor: pointer;
 }
 .mobile-plan { margin: 0.4rem 0 0.2rem; width: 100%; justify-content: center; }
+.mobile-fold-row { display: flex; align-items: center; }
+.mobile-fold-row > a { flex: 1; }
+.mobile-fold-row > button {
+  width: 44px; height: 44px; flex-shrink: 0;
+  border: 0; border-radius: 10px; background: none;
+  color: var(--text-2); font-size: 0.9rem; cursor: pointer;
+}
+.mobile-fold.open .mobile-fold-row > button { transform: rotate(180deg); color: var(--ink); }
 .mobile-label {
   margin: 0.55rem 0 0;
   padding: 0.2rem 0.9rem;
@@ -317,6 +325,10 @@ input, select, textarea { font-size: max(16px, 0.9rem); }
 }
 .mobile-panel a:hover { color: var(--ink); background: rgba(243, 239, 232, 0.04); }
 .mobile-panel .btn { margin-top: 0.5rem; text-align: center; justify-content: center; }
+.mobile-socials { display: flex; gap: 0.65rem; align-items: center; padding: 0.35rem 0.15rem 0.15rem; }
+.mobile-panel .mobile-socials a.icon-btn {
+  width: 44px; min-height: 44px; padding: 0; flex: 0 0 auto; justify-content: center;
+}
 
 /* ─── Page hero (inner pages) ─── */
 .page-hero {

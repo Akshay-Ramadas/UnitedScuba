@@ -133,10 +133,13 @@ export default function Header() {
   const { pathname } = useLocation();
   const { settings, diveSites = [], activities = [] } = useContent();
   const [open, setOpen] = useState(false);
+  const [section, setSection] = useState('');
   const [planOpen, setPlanOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const facebook = socialHref(settings.socials?.facebook);
   const instagram = socialHref(settings.socials?.instagram);
+  const linkedin = socialHref(settings.socials?.linkedin);
+  const youtube = socialHref(settings.socials?.youtube);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -146,6 +149,7 @@ export default function Header() {
 
   useEffect(() => {
     setOpen(false);
+    setSection('');
   }, [pathname]);
 
   useEffect(() => {
@@ -198,17 +202,15 @@ export default function Header() {
               <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
             </svg>
           </SocialIcon>
-          <SocialIcon href={facebook} label="Facebook">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-              <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
-            </svg>
-          </SocialIcon>
           <Link className="btn btn-primary header-cta" to="/book-now">Book a dive</Link>
           <button
             className="menu-toggle"
             type="button"
             aria-label={open ? 'Close menu' : 'Open menu'}
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => setOpen((value) => {
+              if (value) setSection('');
+              return !value;
+            })}
           >
             {open ? '✕' : '☰'}
           </button>
@@ -220,36 +222,90 @@ export default function Header() {
             {label}
           </NavLink>
         ))}
-        <NavLink to="/scuba-diving" onClick={() => setOpen(false)}>Scuba Diving</NavLink>
-        {groups.map((group) => (
-          <div key={group.id}>
-            <p className="mobile-label">{group.title}</p>
-            {group.items.map((item) => (
-              <NavLink className="mobile-sub" key={item.slug} to={activityPath(item)} onClick={() => setOpen(false)}>
-                {item.title}
-              </NavLink>
-            ))}
+        <div className={`mobile-fold${section === 'scuba' ? ' open' : ''}`}>
+          <div className="mobile-fold-row">
+            <NavLink to="/scuba-diving" onClick={() => setOpen(false)}>Scuba Diving</NavLink>
+            <button
+              type="button"
+              aria-label="Show scuba diving"
+              aria-expanded={section === 'scuba'}
+              onClick={() => setSection((value) => (value === 'scuba' ? '' : 'scuba'))}
+            >
+              ▾
+            </button>
           </div>
-        ))}
-        <button
-          className="btn btn-primary mobile-plan"
-          type="button"
-          onClick={() => { setOpen(false); setPlanOpen(true); }}
-        >
-          Plan your dive
-        </button>
-        <NavLink to="/dive-sites" onClick={() => setOpen(false)}>Dive sites</NavLink>
-        {diveSites.map((site) => (
-          <NavLink className="mobile-sub" key={site.slug} to={`/dive-sites/${site.slug}`} onClick={() => setOpen(false)}>
-            {site.title}
-          </NavLink>
-        ))}
+          {section === 'scuba' && (
+            <div className="mobile-fold-body">
+              {groups.map((group) => (
+                <div key={group.id}>
+                  <p className="mobile-label">{group.title}</p>
+                  {group.items.map((item) => (
+                    <NavLink className="mobile-sub" key={item.slug} to={activityPath(item)} onClick={() => setOpen(false)}>
+                      {item.title}
+                    </NavLink>
+                  ))}
+                </div>
+              ))}
+              <button
+                className="btn btn-primary mobile-plan"
+                type="button"
+                onClick={() => { setOpen(false); setPlanOpen(true); }}
+              >
+                Plan your dive
+              </button>
+            </div>
+          )}
+        </div>
+        <div className={`mobile-fold${section === 'sites' ? ' open' : ''}`}>
+          <div className="mobile-fold-row">
+            <NavLink to="/dive-sites" onClick={() => setOpen(false)}>Dive sites</NavLink>
+            {diveSites.length > 0 && (
+              <button
+                type="button"
+                aria-label="Show dive sites"
+                aria-expanded={section === 'sites'}
+                onClick={() => setSection((value) => (value === 'sites' ? '' : 'sites'))}
+              >
+                ▾
+              </button>
+            )}
+          </div>
+          {section === 'sites' && diveSites.map((site) => (
+            <NavLink className="mobile-sub" key={site.slug} to={`/dive-sites/${site.slug}`} onClick={() => setOpen(false)}>
+              {site.title}
+            </NavLink>
+          ))}
+        </div>
         {after.map(([to, label]) => (
           <NavLink key={to} to={to} onClick={() => setOpen(false)}>
             {label}
           </NavLink>
         ))}
         <Link className="btn btn-primary" to="/book-now" onClick={() => setOpen(false)}>Book a dive</Link>
+        <div className="mobile-socials">
+          <SocialIcon href={instagram} label="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" stroke="none" />
+            </svg>
+          </SocialIcon>
+          <SocialIcon href={facebook} label="Facebook">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
+            </svg>
+          </SocialIcon>
+          <SocialIcon href={linkedin} label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z" />
+            </svg>
+          </SocialIcon>
+          <SocialIcon href={youtube} label="YouTube">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M23 12.2s0-3.2-.4-4.6c-.2-.9-.9-1.6-1.8-1.8C19.2 5.4 12 5.4 12 5.4s-7.2 0-8.8.4c-.9.2-1.6.9-1.8 1.8C1 9 1 12.2 1 12.2s0 3.2.4 4.6c.2.9.9 1.6 1.8 1.8 1.6.4 8.8.4 8.8.4s7.2 0 8.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.4.4-4.6.4-4.6zM9.8 15.5v-6.6l6.2 3.3-6.2 3.3z" />
+            </svg>
+          </SocialIcon>
+        </div>
       </div>
       {planOpen && createPortal(
         <div className="plan-modal" role="presentation" onClick={() => setPlanOpen(false)}>

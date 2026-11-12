@@ -3,10 +3,12 @@ import { useContent } from '../hooks/useContent.jsx';
 import PageHero from '../components/PageHero.jsx';
 import CtaBanner from '../components/CtaBanner.jsx';
 import { Seo } from '../lib/seo.jsx';
+import { pageFields } from '../content/pageCopy.js';
 
 export default function DiveSiteDetail() {
   const { slug } = useParams();
-  const { diveSites = [] } = useContent();
+  const { diveSites = [], settings } = useContent();
+  const copy = pageFields(settings, 'dive-sites');
   const site = diveSites.find((item) => item.slug === slug);
   if (!site) {
     return (
@@ -34,7 +36,7 @@ export default function DiveSiteDetail() {
         path={`/dive-sites/${site.slug}`}
         image={site.heroImage}
       />
-      <PageHero kicker="Dive site" title={site.title} intro={site.excerpt} image={site.heroImage} />
+      <PageHero kicker={copy.detailKicker} title={site.title} intro={site.excerpt} image={site.heroImage} />
       <section className="section">
         <div className="container prose">
           {facts.length > 0 && (
@@ -50,22 +52,22 @@ export default function DiveSiteDetail() {
           {site.description && <p>{site.description}</p>}
           {paragraphs(site.overview).length > 0 && (
             <>
-              <h2>Overview</h2>
+              <h2>{copy.overviewTitle}</h2>
               {paragraphs(site.overview).map((line) => <p key={line}>{line}</p>)}
             </>
           )}
           {included.length > 0 && (
             <>
-              <h2>What's included</h2>
+              <h2>{copy.includedTitle}</h2>
               <ul className="list">{included.map((item) => <li key={item}>{item}</li>)}</ul>
             </>
           )}
-          {site.level && <><h2>Who it suits</h2><p>{site.level}</p></>}
+          {site.level && <><h2>{copy.suitsTitle}</h2><p>{site.level}</p></>}
           <div style={{ marginTop: 24 }}>
             <CtaBanner
               compact
-              title={`Book a dive at ${site.title}`}
-              text="Tell us your dates. We confirm the site once we see the sea."
+              title={String(copy.bookTitle || '').replaceAll('{name}', site.title)}
+              text={copy.bookText}
               to={`/book-now?site=${encodeURIComponent(site.slug)}`}
             />
           </div>

@@ -101,6 +101,23 @@ export const PAGE_CONTENT = [
     ],
   },
   {
+    id: 'dive-sites',
+    title: 'Dive sites',
+    hint: 'Header on the dive sites page, and the shared headings on each site',
+    fields: [
+      { name: 'kicker', label: 'Label', default: 'Swaraj Dweep' },
+      { name: 'title', label: 'Heading', default: 'Dive sites' },
+      { name: 'intro', label: 'Intro', type: 'textarea', default: 'The reefs we use from Beach No. 02. The site for the day depends on the sea and who is diving.' },
+      { name: 'cardCta', label: 'Card link', default: 'Site details →' },
+      { name: 'detailKicker', label: 'Site page label', default: 'Dive site' },
+      { name: 'overviewTitle', label: 'Overview heading', default: 'Overview' },
+      { name: 'includedTitle', label: "What's included heading", default: "What's included" },
+      { name: 'suitsTitle', label: 'Who it suits heading', default: 'Who it suits' },
+      { name: 'bookTitle', label: 'Booking heading', hint: 'use {name} for the site name', default: 'Book a dive at {name}' },
+      { name: 'bookText', label: 'Booking text', default: 'Tell us your dates. We confirm the site once we see the sea.' },
+    ],
+  },
+  {
     id: 'about',
     title: 'About us',
     hint: 'About, mission, vision, certifications, safety and equipment',
